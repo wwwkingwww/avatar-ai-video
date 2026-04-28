@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  mosquitto:
+    image: eclipse-mosquitto:2
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+
+  minio:
+    image: minio/minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: avatar
+      MINIO_ROOT_PASSWORD: ${MINIO_PASSWORD:-changeme123}
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+
+  openclaw:
+    image: openclaw/openclaw:latest
+    ports:
+      - "3000:3000"
+    environment:
+      REDIS_URL: redis://redis:6379
+      MQTT_BROKER: mqtt://mosquitto:1883
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_BUCKET: avatar-videos
+    volumes:
+      - ../skills:/opt/openclaw/skills:ro
+      - ../shared:/opt/openclaw/shared:ro
+      - ../templates:/opt/openclaw/templates:ro
+    depends_on:
+      - mosquitto
+      - redis
+      - minio
+
+volumes:
+  redis_data:
+  minio_data:

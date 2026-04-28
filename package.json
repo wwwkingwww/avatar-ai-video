@@ -1,0 +1,15 @@
+{
+  "name": "avatar-ai-video",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "analyze": "node scripts/analyze-runninghub.js",
+    "test": "npm run test:mock",
+    "test:mock": "node scripts/test-e2e.js --mock",
+    "test:e2e": "node scripts/test-e2e.js"
+  },
+  "dependencies": {
+    "playwright": "^1.59.1"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "platform": "kuaishou",
+  "appPackage": "com.smile.gifmaker",
+  "actions": [
+    { "type": "launch", "package": "com.smile.gifmaker" },
+    { "type": "wait", "ms": 3000 },
+    { "type": "tap", "x": 540, "y": 2200, "desc": "点击拍摄按钮" },
+    { "type": "wait", "ms": 1500 },
+    { "type": "tap", "x": 540, "y": 1800, "desc": "从相册选择" },
+    { "type": "wait", "ms": 2000 },
+    { "type": "tap", "x": 1000, "y": 2200, "desc": "下一步" },
+    { "type": "wait", "ms": 1000 },
+    { "type": "input_text", "x": 540, "y": 300, "content": "{{title}}" },
+    { "type": "wait", "ms": 500 },
+    { "type": "tap", "x": 1000, "y": 2200, "desc": "发布" },
+    { "type": "wait", "ms": 8000 },
+    { "type": "screenshot", "name": "publish_result" }
+  ]
+}

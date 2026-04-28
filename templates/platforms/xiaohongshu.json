@@ -1,0 +1,20 @@
+{
+  "platform": "xiaohongshu",
+  "appPackage": "com.xingin.xhs",
+  "actions": [
+    { "type": "launch", "package": "com.xingin.xhs" },
+    { "type": "wait", "ms": 3000 },
+    { "type": "tap", "x": 540, "y": 2200, "desc": "点击+号" },
+    { "type": "wait", "ms": 1500 },
+    { "type": "tap", "x": 540, "y": 1800, "desc": "选择视频" },
+    { "type": "wait", "ms": 2000 },
+    { "type": "tap", "x": 1000, "y": 2200, "desc": "下一步" },
+    { "type": "wait", "ms": 1000 },
+    { "type": "input_text", "x": 540, "y": 500, "content": "{{title}}" },
+    { "type": "input_text", "x": 540, "y": 800, "content": "{{description}}" },
+    { "type": "wait", "ms": 500 },
+    { "type": "tap", "x": 1000, "y": 2200, "desc": "发布笔记" },
+    { "type": "wait", "ms": 8000 },
+    { "type": "screenshot", "name": "publish_result" }
+  ]
+}

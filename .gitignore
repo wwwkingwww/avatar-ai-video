@@ -38,6 +38,14 @@ venv/
 coverage/
 .nyc_output/
 
+# Playwright analysis outputs (large raw files)
+output/api-detailed.json
+output/api-by-category.json
+output/api-requests.json
+output/all-network.json
+output/*.png
+.browser-session/
+
 # Misc
 *.tmp
 .cache/

@@ -1,0 +1,17 @@
+{
+  "platform": "douyin",
+  "appPackage": "com.ss.android.ugc.aweme",
+  "actions": [
+    { "type": "launch", "package": "com.ss.android.ugc.aweme" },
+    { "type": "wait", "ms": 3000 },
+    { "type": "tap", "x": 540, "y": 2200, "desc": "点击+号创建" },
+    { "type": "wait", "ms": 1500 },
+    { "type": "tap", "x": 540, "y": 1900, "desc": "选择视频" },
+    { "type": "wait", "ms": 2000 },
+    { "type": "input_text", "x": 540, "y": 500, "content": "{{title}}" },
+    { "type": "wait", "ms": 500 },
+    { "type": "tap", "x": 1000, "y": 2200, "desc": "点击发布" },
+    { "type": "wait", "ms": 8000 },
+    { "type": "screenshot", "name": "publish_result" }
+  ]
+}

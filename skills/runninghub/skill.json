@@ -1,0 +1,12 @@
+{
+  "name": "runninghub-gen",
+  "version": "1.0.0",
+  "description": "调用 RunningHub API 生成 AI 视频",
+  "entry": "generate.js",
+  "parameters": {
+    "prompt": { "type": "string", "required": true, "description": "视频提示词" },
+    "duration": { "type": "number", "default": 30, "description": "时长(秒)" },
+    "style": { "type": "string", "default": "tech", "description": "风格模板" },
+    "resolution": { "type": "string", "default": "1080p", "description": "分辨率" }
+  }
+}

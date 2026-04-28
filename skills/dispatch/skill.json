@@ -1,0 +1,6 @@
+{
+  "name": "dispatch-agent",
+  "version": "1.0.0",
+  "description": "分发发布任务到手机 Agent 节点",
+  "entry": "dispatch.js"
+}
