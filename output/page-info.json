@@ -1,0 +1,137 @@
+{
+  "buttons": [
+    {
+      "text": "登 录",
+      "className": "css-ti0311 ant-btn ant-btn-round ant-btn-primary ant-btn-background-ghost rh-button h-40 login-btn"
+    },
+    {
+      "text": "Agent模式",
+      "className": "home-mode-pill"
+    },
+    {
+      "text": "@",
+      "className": "home-tool-btn disabled"
+    },
+    {
+      "text": "手动生成",
+      "className": "home-mode-pill"
+    },
+    {
+      "text": "生成偏好",
+      "className": "home-mode-pill"
+    },
+    {
+      "text": "GO↗",
+      "className": "home-send-btn"
+    },
+    {
+      "text": "查看全部",
+      "className": "projects-section__action"
+    },
+    {
+      "text": "新建项目",
+      "className": "create-card home-create-card"
+    },
+    {
+      "text": "查看全部",
+      "className": "projects-section__action"
+    },
+    {
+      "text": "查看全部",
+      "className": "projects-section__action"
+    },
+    {
+      "text": "查看全部",
+      "className": "projects-section__action"
+    },
+    {
+      "text": "查看全部",
+      "className": "projects-section__action"
+    }
+  ],
+  "links": [],
+  "headings": [
+    {
+      "tag": "H3",
+      "text": "我的项目"
+    },
+    {
+      "tag": "H3",
+      "text": "电视广告"
+    },
+    {
+      "tag": "H3",
+      "text": "叙事短片"
+    },
+    {
+      "tag": "H3",
+      "text": "漫剧"
+    },
+    {
+      "tag": "H3",
+      "text": "创意短片"
+    }
+  ],
+  "scripts": [
+    "https://fxgate.baidu.com/angelia/fcagl.js?production=_f7L2XwGXjyszb4d1e2oxPybgD",
+    "https://hm.baidu.com/hm.js?183559298e888165ed7493cc9bde965d",
+    "https://www.googletagmanager.com/gtag/js?id=G-M7HK0PR04Z",
+    "https://rhtv.runninghub.cn/_nuxt/D_s8Y3Bi.js",
+    "https://rhtv.runninghub.cn/sdk/web-cn-sesdk-umd.js",
+    "https://res.wx.qq.com/connect/zh_CN/htmledition/js/wxLogin.js"
+  ],
+  "styles": [
+    "https://rhtv.runninghub.cn/_nuxt/entry.Cp7Xrv7-.css",
+    "https://rhtv.runninghub.cn/_nuxt/useInputHandling.B6y3RmmL.css",
+    "https://rhtv.runninghub.cn/_nuxt/RhCoinRechargeModal.D35C-AJf.css",
+    "https://rhtv.runninghub.cn/_nuxt/PayResult.AtNEM3-s.css",
+    "https://rhtv.runninghub.cn/_nuxt/CreateTeamModal.DtDM0Yw9.css",
+    "https://rhtv.runninghub.cn/_nuxt/ExchangeCardMealModal.D5iXAaaV.css",
+    "https://rhtv.runninghub.cn/_nuxt/ExchangeCardModal.CVA1oh4p.css",
+    "https://rhtv.runninghub.cn/_nuxt/PackageChangeModal.C7laNUDU.css",
+    "https://rhtv.runninghub.cn/_nuxt/PlanSwapModal.DPfYwqyI.css",
+    "https://rhtv.runninghub.cn/_nuxt/WalletExchangeModal.Bc5tziR_.css",
+    "https://rhtv.runninghub.cn/_nuxt/ApiCallModal.0I_5Il1O.css",
+    "https://rhtv.runninghub.cn/_nuxt/WatermarkModal.D6pIFJhE.css",
+    "https://rhtv.runninghub.cn/_nuxt/PlanManagementModal.BsqIAYLj.css",
+    "https://rhtv.runninghub.cn/_nuxt/RHLanguageSelection.BY_eZg0A.css",
+    "https://rhtv.runninghub.cn/_nuxt/UserBtn.CMc6IpFz.css",
+    "https://rhtv.runninghub.cn/_nuxt/RHCorTrfBtn.Bg3k8ZT-.css",
+    "https://rhtv.runninghub.cn/_nuxt/RHCustomAmount.DXxeg7Lp.css",
+    "https://rhtv.runninghub.cn/_nuxt/WalletRechargeModal.-M7-A8Iu.css",
+    "https://rhtv.runninghub.cn/_nuxt/Member.ON_gR-Yi.css",
+    "https://rhtv.runninghub.cn/_nuxt/WalletCardItem.DIXZJg2D.css",
+    "https://rhtv.runninghub.cn/_nuxt/ApiRecharge.CCVHurYF.css",
+    "https://rhtv.runninghub.cn/_nuxt/TeamPurchaseConfirmModal.CjV1EOGe.css",
+    "https://rhtv.runninghub.cn/_nuxt/TeamRenewConfirmModal.C7EuZA2U.css",
+    "https://rhtv.runninghub.cn/_nuxt/TeamUpgradeConfirmModal.EysTlnpG.css",
+    "https://rhtv.runninghub.cn/_nuxt/TeamMembershipPlan.DX95_ki1.css",
+    "https://rhtv.runninghub.cn/_nuxt/PayModal.BRrtcKjz.css",
+    "https://rhtv.runninghub.cn/_nuxt/RHLoading.C3JJEvHq.css",
+    "https://rhtv.runninghub.cn/_nuxt/CanvasHeaderRight.DC9J5bT_.css",
+    "https://rhtv.runninghub.cn/_nuxt/HomeAgentOrb.BQ79JrhA.css",
+    "https://rhtv.runninghub.cn/_nuxt/AIInput.DENjTgJc.css",
+    "https://rhtv.runninghub.cn/_nuxt/ModelConfigItems.D6UEvktx.css",
+    "https://rhtv.runninghub.cn/_nuxt/HomeCustomPanel.C-DPB8lD.css",
+    "https://rhtv.runninghub.cn/_nuxt/ProjectsSection.BmsQ-U-W.css",
+    "https://rhtv.runninghub.cn/_nuxt/ProjectShowcaseCard.ggowiIWQ.css",
+    "https://rhtv.runninghub.cn/_nuxt/CampCanvasCard.BdBww-VW.css",
+    "https://rhtv.runninghub.cn/_nuxt/CanvasCard.CPOPjZ9C.css",
+    "https://rhtv.runninghub.cn/_nuxt/rhTxtButton.DzDP5E-m.css",
+    "https://rhtv.runninghub.cn/_nuxt/index.CGizjmRK.css"
+  ],
+  "metas": [
+    {
+      "name": "",
+      "content": ""
+    },
+    {
+      "name": "viewport",
+      "content": "width=device-width,initial-scale=1.0,user-scalable=no"
+    },
+    {
+      "name": "",
+      "content": "IE=edge"
+    }
+  ]
+}

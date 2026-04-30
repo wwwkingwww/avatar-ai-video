@@ -1,0 +1,74 @@
+{
+  "site": "https://rhtv.runninghub.cn",
+  "analyzed_at": "2026-04-28",
+  "apis": [
+    {
+      "category": "system",
+      "method": "GET",
+      "path": "/api/system/getConfig",
+      "desc": "系统配置"
+    },
+    {
+      "category": "portal",
+      "method": "GET",
+      "path": "/api/portal/v2/getDictConfig",
+      "desc": "字典配置v2"
+    },
+    {
+      "category": "portal",
+      "method": "GET",
+      "path": "/api/portal/getDictConfig",
+      "desc": "字典配置"
+    },
+    {
+      "category": "user",
+      "method": "GET",
+      "path": "/uc/client/ipAndCountry",
+      "desc": "IP归属地"
+    },
+    {
+      "category": "canvas",
+      "method": "GET",
+      "path": "/canvas/model/list",
+      "desc": "模型列表（视频生成模型）"
+    },
+    {
+      "category": "canvas",
+      "method": "GET",
+      "path": "/canvas/list",
+      "desc": "画布/项目列表"
+    },
+    {
+      "category": "canvas",
+      "method": "GET",
+      "path": "/canvas/community/category/list",
+      "desc": "社区分类列表"
+    },
+    {
+      "category": "canvas",
+      "method": "GET",
+      "path": "/canvas/community/composition/list",
+      "desc": "社区作品列表"
+    },
+    {
+      "category": "auth",
+      "method": "GET",
+      "path": "/uc/wechat/login/qrcode",
+      "desc": "微信扫码登录-获取二维码"
+    },
+    {
+      "category": "auth",
+      "method": "POST",
+      "path": "/uc/wechat/check/login",
+      "desc": "微信扫码登录-轮询状态"
+    }
+  ],
+  "ui_flow": {
+    "login": "微信扫码 → /uc/wechat/login/qrcode → 轮询 /uc/wechat/check/login",
+    "main_pages": ["/projects", "/projects/canvas/camp", "/projects/canvas/me"],
+    "key_buttons": ["手动生成", "Agent模式", "新建项目", "GO/生成"],
+    "framework": "Ant Design (ant-modal, ant-btn, ant-drawer)",
+    "auth_required": true
+  },
+  "notes": "视频生成的提交 API (POST /canvas/xxx/generate) 未在本次抓包中捕获，需要在登录态下触发一次完整生成流程来获取。"
+}

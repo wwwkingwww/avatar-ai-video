@@ -1,0 +1,93 @@
+{
+  "buttons": [
+    {
+      "text": "登 录",
+      "className": "css-ti0311 ant-btn ant-btn-round ant-btn-primary ant-btn-background-ghost rh-button h-40 login-btn"
+    },
+    {
+      "text": "",
+      "className": "home-agent-orb"
+    },
+    {
+      "text": "Agent模式",
+      "className": "home-mode-pill"
+    },
+    {
+      "text": "@",
+      "className": "home-tool-btn disabled"
+    },
+    {
+      "text": "自动生成无需确认直接生成",
+      "className": "home-autorun-dropdown-item"
+    },
+    {
+      "text": "手动生成生成前请求确认",
+      "className": "home-autorun-dropdown-item active"
+    },
+    {
+      "text": "手动生成",
+      "className": "home-mode-pill active"
+    },
+    {
+      "text": "生成偏好",
+      "className": "home-mode-pill"
+    },
+    {
+      "text": "GO↗",
+      "className": "home-send-btn"
+    },
+    {
+      "text": "查看全部",
+      "className": "projects-section__action"
+    },
+    {
+      "text": "新建项目",
+      "className": "create-card home-create-card"
+    },
+    {
+      "text": "查看全部",
+      "className": "projects-section__action"
+    },
+    {
+      "text": "查看全部",
+      "className": "projects-section__action"
+    },
+    {
+      "text": "查看全部",
+      "className": "projects-section__action"
+    },
+    {
+      "text": "查看全部",
+      "className": "projects-section__action"
+    }
+  ],
+  "inputs": [
+    {
+      "type": "file",
+      "placeholder": "",
+      "name": "",
+      "className": "hidden-file-input"
+    }
+  ],
+  "textareas": [
+    {
+      "className": "composer-input",
+      "placeholder": ""
+    }
+  ],
+  "dialogs": [],
+  "uploadElements": [
+    {
+      "className": "home-upload-card",
+      "tag": "DIV"
+    },
+    {
+      "className": "home-upload-icon",
+      "tag": "DIV"
+    },
+    {
+      "className": "hidden-file-input",
+      "tag": "INPUT"
+    }
+  ]
+}

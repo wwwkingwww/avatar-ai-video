@@ -1,0 +1,151 @@
+{
+  "buttons": [
+    {
+      "text": "聚光营地",
+      "tag": "DIV",
+      "className": "ant-tabs-tab-btn"
+    },
+    {
+      "text": "我的项目",
+      "tag": "DIV",
+      "className": "ant-tabs-tab-btn"
+    },
+    {
+      "text": "团队项目",
+      "tag": "DIV",
+      "className": "ant-tabs-tab-btn"
+    },
+    {
+      "text": "推荐模版",
+      "tag": "DIV",
+      "className": "ant-tabs-tab-btn"
+    },
+    {
+      "text": "登 录",
+      "tag": "DIV",
+      "className": "user-btn-wrap h-100 d-flex align-items-center"
+    },
+    {
+      "text": "登 录",
+      "tag": "BUTTON",
+      "className": "css-ti0311 ant-btn ant-btn-round ant-btn-primary ant-btn-background-ghost rh-button h-40 login-btn"
+    },
+    {
+      "text": "Agent模式",
+      "tag": "BUTTON",
+      "className": "home-mode-pill"
+    },
+    {
+      "text": "@",
+      "tag": "BUTTON",
+      "className": "home-tool-btn disabled"
+    },
+    {
+      "text": "手动生成",
+      "tag": "BUTTON",
+      "className": "home-mode-pill"
+    },
+    {
+      "text": "生成偏好",
+      "tag": "BUTTON",
+      "className": "home-mode-pill"
+    },
+    {
+      "text": "GO↗",
+      "tag": "BUTTON",
+      "className": "home-send-btn"
+    },
+    {
+      "text": "查看全部",
+      "tag": "BUTTON",
+      "className": "projects-section__action"
+    },
+    {
+      "text": "新建项目",
+      "tag": "BUTTON",
+      "className": "create-card home-create-card"
+    },
+    {
+      "text": "查看全部",
+      "tag": "BUTTON",
+      "className": "projects-section__action"
+    },
+    {
+      "text": "查看全部",
+      "tag": "BUTTON",
+      "className": "projects-section__action"
+    },
+    {
+      "text": "查看全部",
+      "tag": "BUTTON",
+      "className": "projects-section__action"
+    },
+    {
+      "text": "查看全部",
+      "tag": "BUTTON",
+      "className": "projects-section__action"
+    },
+    {
+      "text": "验证码登录密码登录Google登录",
+      "tag": "DIV",
+      "className": "w-100 d-flex justify-content-center login-mode-btn"
+    },
+    {
+      "text": "验证码登录",
+      "tag": "BUTTON",
+      "className": "css-ti0311 ant-btn ant-btn-link rh-button d-flex align-items-center"
+    },
+    {
+      "text": "密码登录",
+      "tag": "BUTTON",
+      "className": "css-ti0311 ant-btn ant-btn-link rh-button d-flex align-items-center"
+    },
+    {
+      "text": "Google登录",
+      "tag": "BUTTON",
+      "className": "css-ti0311 ant-btn ant-btn-link rh-button google-switch d-none-mobile d-none-cn"
+    }
+  ],
+  "inputs": [
+    {
+      "type": "file",
+      "name": "",
+      "placeholder": "",
+      "className": "hidden-file-input"
+    }
+  ],
+  "headings": [
+    {
+      "tag": "H3",
+      "text": "我的项目"
+    },
+    {
+      "tag": "H3",
+      "text": "电视广告"
+    },
+    {
+      "tag": "H3",
+      "text": "叙事短片"
+    },
+    {
+      "tag": "H3",
+      "text": "漫剧"
+    },
+    {
+      "tag": "H3",
+      "text": "创意短片"
+    },
+    {
+      "tag": "H3",
+      "text": "微信扫码登录"
+    }
+  ],
+  "scripts": [
+    "https://fxgate.baidu.com/angelia/fcagl.js?production=_f7L2XwGXjyszb4d1e2oxPybgD",
+    "https://hm.baidu.com/hm.js?183559298e888165ed7493cc9bde965d",
+    "https://www.googletagmanager.com/gtag/js?id=G-M7HK0PR04Z",
+    "https://rhtv.runninghub.cn/_nuxt/D_s8Y3Bi.js",
+    "https://rhtv.runninghub.cn/sdk/web-cn-sesdk-umd.js",
+    "https://res.wx.qq.com/connect/zh_CN/htmledition/js/wxLogin.js"
+  ]
+}
