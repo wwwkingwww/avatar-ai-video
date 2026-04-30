@@ -49,7 +49,7 @@ services:
   creator-api:
     build:
       context: ../creator-api
-      dockerfile: ../creator-api/Dockerfile
+      dockerfile: Dockerfile
     ports:
       - "3001:3001"
     environment:
