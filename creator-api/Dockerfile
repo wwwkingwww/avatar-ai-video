@@ -1,7 +1,15 @@
+FROM node:20-alpine AS frontend-builder
+WORKDIR /frontend
+COPY creator-frontend/package.json creator-frontend/package-lock.json ./
+RUN npm ci
+COPY creator-frontend/ ./
+RUN npm run build
+
 FROM node:20-alpine
 WORKDIR /app
-COPY package.json package-lock.json ./
+COPY creator-api/package.json creator-api/package-lock.json ./
 RUN npm ci --production
-COPY . .
+COPY creator-api/ ./
+COPY --from=frontend-builder /frontend/dist /creator-frontend/dist
 EXPOSE 3001
 CMD ["node", "server.js"]
