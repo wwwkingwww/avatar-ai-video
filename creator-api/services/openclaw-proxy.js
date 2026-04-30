@@ -36,7 +36,7 @@ export async function sendToOpenClaw(history, session) {
   const response = await fetch(`${OPENCLAW_URL}/v1/chat/completions`, {
     method: 'POST',
     headers,
-    body: JSON.stringify({ model: 'gpt-4o', messages, stream: true }),
+    body: JSON.stringify({ model: 'openclaw', messages, stream: true }),
   });
   if (!response.ok) throw new Error(`OpenClaw 返回错误: HTTP ${response.status}`);
   return response.body;
@@ -48,7 +48,7 @@ export async function submitTaskToOpenClaw(session) {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model: 'gpt-4o',
+      model: 'openclaw',
       messages: [{
         role: 'system',
         content: `用户已确认以下视频创作需求，请执行：\n${JSON.stringify(taskPayload, null, 2)}\n\n你需要：\n1. 调用 runninghub-gen skill 生成视频\n2. 调用 dispatch-agent skill 分发到对应平台\n3. 返回任务 ID 给用户`,
