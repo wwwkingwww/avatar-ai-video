@@ -31,16 +31,18 @@ services:
   openclaw:
     image: openclaw/openclaw:latest
     ports:
-      - "3000:3000"
+      - "3000:18789"
     environment:
       REDIS_URL: redis://redis:6379
       MQTT_BROKER: mqtt://mosquitto:1883
       MINIO_ENDPOINT: http://minio:9000
       MINIO_BUCKET: avatar-videos
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-sk-placeholder}
     volumes:
       - ../skills:/opt/openclaw/skills:ro
       - ../shared:/opt/openclaw/shared:ro
       - ../templates:/opt/openclaw/templates:ro
+      - openclaw_home:/home/node/.openclaw
     depends_on:
       - mosquitto
       - redis
@@ -68,3 +70,4 @@ services:
 volumes:
   redis_data:
   minio_data:
+  openclaw_home:
