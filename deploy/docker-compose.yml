@@ -42,7 +42,6 @@ services:
       - ../skills:/opt/openclaw/skills:ro
       - ../shared:/opt/openclaw/shared:ro
       - ../templates:/opt/openclaw/templates:ro
-      - openclaw_home:/home/node/.openclaw
     depends_on:
       - mosquitto
       - redis
@@ -70,4 +69,3 @@ services:
 volumes:
   redis_data:
   minio_data:
-  openclaw_home:
