@@ -51,7 +51,7 @@ services:
       context: ..
       dockerfile: creator-api/Dockerfile
     ports:
-      - "3001:3001"
+      - "3099:3099"
     environment:
       REDIS_URL: redis://redis:6379
       OPENCLAW_URL: http://openclaw:3000

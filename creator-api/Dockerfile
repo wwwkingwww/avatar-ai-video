@@ -11,5 +11,5 @@ COPY creator-api/package.json creator-api/package-lock.json ./
 RUN npm ci --production
 COPY creator-api/ ./
 COPY --from=frontend-builder /frontend/dist /creator-frontend/dist
-EXPOSE 3001
+EXPOSE 3099
 CMD ["node", "server.js"]
