@@ -54,7 +54,7 @@ services:
       - "3099:3099"
     environment:
       REDIS_URL: redis://redis:6379
-      OPENCLAW_URL: http://openclaw:3000
+      OPENCLAW_URL: http://openclaw:18789
       MINIO_ENDPOINT: http://minio:9000
       MINIO_BUCKET: creator-uploads
       MINIO_ACCESS_KEY: avatar
