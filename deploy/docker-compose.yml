@@ -55,6 +55,7 @@ services:
     environment:
       REDIS_URL: redis://redis:6379
       OPENCLAW_URL: http://openclaw:18789
+      OPENCLAW_TOKEN: ${OPENCLAW_TOKEN:-45664d47b15ca052dcdf572f2c311a6e9a31251192ac49ad}
       MINIO_ENDPOINT: http://minio:9000
       MINIO_BUCKET: creator-uploads
       MINIO_ACCESS_KEY: avatar

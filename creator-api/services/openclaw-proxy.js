@@ -1,4 +1,5 @@
 const OPENCLAW_URL = process.env.OPENCLAW_URL || 'http://localhost:3000';
+const OPENCLAW_TOKEN = process.env.OPENCLAW_TOKEN || '';
 const MAX_ROUNDS = 4;
 
 export function buildSystemPrompt(session) {
@@ -30,9 +31,11 @@ export async function sendToOpenClaw(history, session) {
     { role: 'system', content: systemPrompt },
     ...history.map((msg) => ({ role: msg.role, content: msg.content })),
   ];
+  const headers = { 'Content-Type': 'application/json' };
+  if (OPENCLAW_TOKEN) headers['Authorization'] = 'Bearer ' + OPENCLAW_TOKEN;
   const response = await fetch(`${OPENCLAW_URL}/v1/chat/completions`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     body: JSON.stringify({ model: 'gpt-4o', messages, stream: true }),
   });
   if (!response.ok) throw new Error(`OpenClaw 返回错误: HTTP ${response.status}`);
