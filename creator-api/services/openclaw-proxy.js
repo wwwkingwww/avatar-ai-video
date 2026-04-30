@@ -1,3 +1,5 @@
+const DEEPSEEK_URL = process.env.DEEPSEEK_URL || 'https://api.deepseek.com';
+const DEEPSEEK_KEY = process.env.DEEPSEEK_KEY || '';
 const OPENCLAW_URL = process.env.OPENCLAW_URL || 'http://localhost:3000';
 const OPENCLAW_TOKEN = process.env.OPENCLAW_TOKEN || '';
 const MAX_ROUNDS = 4;
@@ -31,22 +33,35 @@ export async function sendToOpenClaw(history, session) {
     { role: 'system', content: systemPrompt },
     ...history.map((msg) => ({ role: msg.role, content: msg.content })),
   ];
-  const headers = { 'Content-Type': 'application/json' };
-  if (OPENCLAW_TOKEN) headers['Authorization'] = 'Bearer ' + OPENCLAW_TOKEN;
-  const response = await fetch(`${OPENCLAW_URL}/v1/chat/completions`, {
+
+  const headers = {
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer ' + DEEPSEEK_KEY,
+  };
+
+  const response = await fetch(`${DEEPSEEK_URL}/v1/chat/completions`, {
     method: 'POST',
     headers,
-    body: JSON.stringify({ model: 'openclaw', messages, stream: true }),
+    body: JSON.stringify({ model: 'deepseek-chat', messages, stream: true }),
   });
-  if (!response.ok) throw new Error(`OpenClaw 返回错误: HTTP ${response.status}`);
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`DeepSeek 返回错误: HTTP ${response.status} - ${text.substring(0,200)}`);
+  }
+
   return response.body;
 }
 
 export async function submitTaskToOpenClaw(session) {
   const taskPayload = { type: 'video_creation', context: session.context, files: session.files, sessionId: session.id };
+
+  const headers = { 'Content-Type': 'application/json' };
+  if (OPENCLAW_TOKEN) headers['Authorization'] = 'Bearer ' + OPENCLAW_TOKEN;
+
   const response = await fetch(`${OPENCLAW_URL}/v1/chat/completions`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     body: JSON.stringify({
       model: 'openclaw',
       messages: [{
