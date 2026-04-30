@@ -4,10 +4,13 @@ import { v4 as uuidv4 } from 'uuid';
 
 const BUCKET = process.env.MINIO_BUCKET || 'creator-uploads';
 
+const rawEndpoint = process.env.MINIO_ENDPOINT || 'http://localhost:9000';
+const url = new URL(rawEndpoint);
+
 const minio = new MinioClient({
-  endPoint: (process.env.MINIO_ENDPOINT || 'localhost').replace(/^https?:\/\//, ''),
-  port: 9000,
-  useSSL: (process.env.MINIO_ENDPOINT || '').startsWith('https'),
+  endPoint: url.hostname,
+  port: parseInt(url.port || '9000', 10),
+  useSSL: url.protocol === 'https:',
   accessKey: process.env.MINIO_ACCESS_KEY || 'avatar',
   secretKey: process.env.MINIO_SECRET_KEY || 'changeme123',
 });
