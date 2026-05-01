@@ -60,6 +60,7 @@ services:
       OPENCLAW_URL: http://openclaw:18789
       OPENCLAW_TOKEN: ${OPENCLAW_TOKEN:-}
       DEEPSEEK_KEY: ${DEEPSEEK_KEY:-sk-placeholder}
+      MQTT_BROKER: mqtt://mosquitto:1883
       MINIO_ENDPOINT: http://minio:9000
       MINIO_BUCKET: creator-uploads
       MINIO_ACCESS_KEY: avatar

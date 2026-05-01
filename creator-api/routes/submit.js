@@ -1,16 +1,18 @@
 import { Router } from 'express';
 import { withSession } from '../middleware/round-guard.js';
 import { updateSession } from '../services/session-manager.js';
+import { dispatchTask } from '../services/task-dispatcher.js';
 
 export const submitRouter = Router();
 
 submitRouter.post('/:id/submit', withSession(), async (req, res) => {
   try {
     const session = req.session;
-    const taskId = 'task_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
-    await updateSession(session.id, { status: 'submitted', taskId });
-    res.json({ success: true, taskId, estimatedMinutes: 20 });
+    const result = await dispatchTask(session);
+    await updateSession(session.id, { status: 'submitted', taskId: result.taskId });
+    res.json({ success: true, taskId: result.taskId, results: result.results, estimatedMinutes: 20 });
   } catch (e) {
-    res.status(500).json({ success: false, error: e.message });
+    console.error('[submit] dispatch failed:', e.message);
+    res.status(500).json({ success: false, error: `任务分发失败: ${e.message}` });
   }
 });
