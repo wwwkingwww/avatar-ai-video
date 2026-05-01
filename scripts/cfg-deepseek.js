@@ -10,11 +10,15 @@ if (!apiKey) {
 }
 
 cfg.models = cfg.models || {};
+cfg.models.mode = 'merge';
 cfg.models.providers = cfg.models.providers || {};
 cfg.models.providers.deepseek = {
   baseUrl: 'https://api.deepseek.com',
   apiKey: apiKey,
-  models: ['deepseek-chat']
+  api: 'openai-completions',
+  models: [
+    { id: 'deepseek-chat', name: 'DeepSeek Chat' }
+  ]
 };
 
 cfg.agents = cfg.agents || {};
