@@ -1,139 +1,220 @@
-const RH_BASE_URL = process.env.RH_API_BASE_URL || 'https://www.runninghub.cn';
+const RH_BASE_URL = process.env.RH_API_BASE_URL || 'https://www.runninghub.cn/openapi/v2'
 
-export class RHV2Client {
-  constructor(apiKey, baseUrl = RH_BASE_URL) {
-    if (!apiKey) throw new Error('RH_API_KEY is required for V2 client');
-    this.apiKey = apiKey;
-    this.baseUrl = baseUrl;
-  }
+const NON_TERMINAL_STATUSES = new Set(['CREATE', 'QUEUED', 'RUNNING'])
+const SUCCESS_STATUS = 'SUCCESS'
+const FAILURE_STATUSES = new Set(['FAILED', 'CANCEL'])
 
-  _headers(contentType = 'application/json') {
-    const h = {
-      'Host': 'www.runninghub.cn',
-    };
-    if (contentType) h['Content-Type'] = contentType;
-    return h;
-  }
-
-  _authBody(extra = {}) {
-    return { apiKey: this.apiKey, ...extra };
-  }
-
-  async _request(method, path, opts = {}) {
-    const { body, isFormData } = opts;
-
-    const url = `${this.baseUrl}${path}`;
-    const fetchOpts = { method, headers: this._headers(isFormData ? undefined : 'application/json') };
-
-    if (body) {
-      fetchOpts.body = isFormData ? body : JSON.stringify(body);
-    } else if (method !== 'GET' && !isFormData) {
-      fetchOpts.body = JSON.stringify(this._authBody());
+async function retryFetch(fn, maxRetries = 3) {
+  let lastError
+  for (let i = 0; i < maxRetries; i++) {
+    if (i > 0) await new Promise((r) => setTimeout(r, Math.min(2 ** i, 15) * 1000))
+    try {
+      return await fn()
+    } catch (e) {
+      lastError = e
+      if (e.statusCode !== 429 && e.statusCode < 500) throw e
     }
-
-    const res = await fetch(url, fetchOpts);
-
-    if (!res.ok) {
-      const text = await res.text().catch(() => '');
-      throw new Error(`RH V2 HTTP ${res.status} ${method} ${path}: ${text.substring(0, 300)}`);
-    }
-
-    const data = await res.json();
-    if (data.code !== undefined && data.code !== 0) {
-      throw new Error(`RH V2 API error code=${data.code}: ${data.msg || 'unknown'}`);
-    }
-    return data;
   }
+  throw lastError
+}
 
-  async uploadFile(fileBuffer, fileName, fileType) {
-    const formData = new FormData();
-    const blob = new Blob([fileBuffer]);
-    formData.append('file', blob, fileName);
-    formData.append('fileType', fileType);
-    formData.append('apiKey', this.apiKey);
-
-    const data = await this._request('POST', '/task/openapi/upload', {
-      body: formData,
-      isFormData: true,
-    });
-    return data.data;
-  }
-
-  async getNodes(webappId) {
-    const res = await fetch(`${this.baseUrl}/api/webapp/apiCallDemo?webappId=${webappId}&apiKey=${this.apiKey}`, {
-      headers: this._headers(),
-    });
-    if (!res.ok) {
-      const text = await res.text().catch(() => '');
-      throw new Error(`RH V2 getNodes HTTP ${res.status}: ${text.substring(0, 300)}`);
-    }
-    const data = await res.json();
-    if (data.code !== undefined && data.code !== 0) {
-      throw new Error(`RH V2 getNodes error code=${data.code}: ${data.msg || 'unknown'}`);
-    }
-    return data.data?.nodeInfoList || [];
-  }
-
-  async submitTask(webappId, nodeInfoList) {
-    const body = {
-      webappId,
-      apiKey: this.apiKey,
-      nodeInfoList,
-    };
-    const data = await this._request('POST', '/task/openapi/ai-app/run', { body });
-    return data.data;
-  }
-
-  async queryOutputs(taskId) {
-    const body = this._authBody({ taskId });
-    const data = await this._request('POST', '/task/openapi/outputs', { body });
-    return {
-      status: data.data?.taskStatus || data.data?.status,
-      outputs: data.data?.outputs || data.data?.files || [],
-      error: data.data?.failedReason || data.data?.error || null,
-    };
-  }
-
-  async pollTask(taskId, timeoutMs = 10 * 60 * 1000, intervalMs = 5000) {
-    const deadline = Date.now() + timeoutMs;
-
-    while (Date.now() < deadline) {
-      const result = await this.queryOutputs(taskId);
-      const status = result.status?.toUpperCase();
-
-      if (status === 'SUCCESS') return { status: 'SUCCESS', outputs: result.outputs };
-      if (status === 'FAILED') throw new Error(`RH V2 task failed: ${result.error || 'unknown'}`);
-      if (status === 'CANCEL') return { status: 'CANCEL', outputs: [] };
-
-      await new Promise((r) => setTimeout(r, intervalMs));
-    }
-
-    throw new Error(`RH V2 task ${taskId} timed out after ${timeoutMs / 60000}min`);
-  }
-
-  async runWorkflow(webappId, nodeInfoList, timeoutMs) {
-    const { taskId } = await this.submitTask(webappId, nodeInfoList);
-    return this.pollTask(taskId, timeoutMs);
+class RHV2Error extends Error {
+  constructor(message, statusCode) {
+    super(message)
+    this.name = 'RHV2Error'
+    this.statusCode = statusCode
   }
 }
 
-export function parseNodeInfoList(model, selectedParams, uploadResults = {}) {
-  if (!model || !model.fields || !Array.isArray(model.fields)) return [];
+export class RHV2Client {
+  constructor(apiKey, baseUrl = RH_BASE_URL) {
+    if (!apiKey) throw new RHV2Error('RH_API_KEY is required for V2 client')
+    this.apiKey = apiKey
+    this.baseUrl = baseUrl
+  }
 
-  return model.fields.map((field) => {
-    let fieldValue = selectedParams[field.fieldName] !== undefined
-      ? selectedParams[field.fieldName]
-      : field.fieldValue;
+  _headers(contentType) {
+    const h = { Authorization: `Bearer ${this.apiKey}` }
+    if (contentType) {
+      if (contentType.startsWith('multipart/')) {
+        h['Content-Type'] = contentType
+      } else {
+        h['Content-Type'] = contentType
+      }
+    }
+    return h
+  }
 
-    const uploadKey = `${field.nodeId}:${field.fieldName}`;
-    if (uploadResults[uploadKey]) {
-      fieldValue = uploadResults[uploadKey].fileName;
+  async _fetch(method, path, opts = {}) {
+    const { body, contentType, isMultipart } = opts
+    const url = `${this.baseUrl}${path}`
+    const fetchOpts = { method, headers: this._headers(isMultipart ? undefined : (contentType || 'application/json')) }
+
+    if (body) {
+      if (isMultipart) {
+        delete fetchOpts.headers['Content-Type']
+        fetchOpts.body = body
+      } else {
+        fetchOpts.body = JSON.stringify(body)
+      }
     }
 
-    return {
-      nodeId: field.nodeId,
-      fieldName: field.fieldName,
-      fieldValue: String(fieldValue),
-    };
-  });
+    const res = await fetch(url, fetchOpts)
+
+    if (!res.ok) {
+      const text = await res.text().catch(() => '')
+      const err = new RHV2Error(`RH V2 HTTP ${res.status} ${method} ${path}: ${text.substring(0, 300)}`, res.status)
+      throw err
+    }
+
+    const data = await res.json()
+    return data
+  }
+
+  async uploadFile(fileBuffer, fileName) {
+    const boundary = `----rh-${Date.now()}`
+    const mimeType = fileName.endsWith('.png') ? 'image/png' :
+      fileName.endsWith('.jpg') || fileName.endsWith('.jpeg') ? 'image/jpeg' :
+        fileName.endsWith('.mp4') ? 'video/mp4' : 'application/octet-stream'
+
+    const parts = [
+      `--${boundary}\r\n`,
+      `Content-Disposition: form-data; name="file"; filename="${fileName}"\r\n`,
+      `Content-Type: ${mimeType}\r\n\r\n`,
+    ]
+    const head = new Uint8Array(parts.map((p) => new TextEncoder().encode(p)).reduce((a, b) => {
+      const c = new Uint8Array(a.length + b.length)
+      c.set(a, 0)
+      c.set(b, a.length)
+      return c
+    }))
+    const tail = new TextEncoder().encode(`\r\n--${boundary}--\r\n`)
+    const fileBuf = typeof fileBuffer === 'string' ?
+      new TextEncoder().encode(fileBuffer) :
+      fileBuffer
+    const fullBody = new Uint8Array(head.length + fileBuf.length + tail.length)
+    fullBody.set(head, 0)
+    fullBody.set(fileBuf, head.length)
+    fullBody.set(tail, head.length + fileBuf.length)
+
+    const data = await retryFetch(() =>
+      this._fetch('POST', '/media/upload/binary', {
+        body: fullBody,
+        isMultipart: true,
+      })
+    )
+
+    if (data.code !== 0) {
+      throw new RHV2Error(`Upload failed: ${data.msg || 'unknown'}`, 400)
+    }
+
+    const downloadUrl = (data.data?.download_url || '').trim()
+    if (!downloadUrl) throw new RHV2Error('Upload failed: missing data.download_url')
+    return downloadUrl
+  }
+
+  async submit(endpoint, payload) {
+    if (!endpoint || endpoint.startsWith('/')) {
+      throw new RHV2Error('Endpoint must be a relative path without leading slash')
+    }
+
+    const data = await retryFetch(() =>
+      this._fetch('POST', `/${endpoint}`, { body: payload })
+    )
+
+    const errorCode = data.errorCode || data.error_code
+    const errorMsg = data.errorMessage || data.error_message
+    if (errorCode || errorMsg) {
+      throw new RHV2Error(`Submit failed: ${errorMsg || errorCode}`, 400)
+    }
+
+    const taskId = data.taskId || data.task_id
+    if (!taskId) {
+      throw new RHV2Error(`Submit failed: missing taskId in response: ${JSON.stringify(data).substring(0, 200)}`)
+    }
+    return String(taskId)
+  }
+
+  async query(taskId) {
+    const data = await this._fetch('POST', '/query', { body: { taskId } })
+
+    const errorCode = data.errorCode || data.error_code
+    const errorMsg = data.errorMessage || data.error_message
+    if (errorCode || errorMsg) {
+      throw new RHV2Error(`Task failed: ${errorMsg || errorCode} [taskId=${taskId}]`)
+    }
+
+    const status = String(data.status || '').trim().toUpperCase()
+    if (status === SUCCESS_STATUS) {
+      return data
+    }
+    if (FAILURE_STATUSES.has(status)) {
+      throw new RHV2Error(`Task ended with status=${status} [taskId=${taskId}]`)
+    }
+    if (!NON_TERMINAL_STATUSES.has(status)) {
+      throw new RHV2Error(`Unknown task status=${status} [taskId=${taskId}]`)
+    }
+    return null
+  }
+
+  async pollTask(taskId, timeoutMs = 10 * 60 * 1000, intervalMs = 5000) {
+    const deadline = Date.now() + timeoutMs
+    let consecutiveFailures = 0
+
+    while (Date.now() < deadline) {
+      await new Promise((r) => setTimeout(r, intervalMs))
+
+      try {
+        const data = await this.query(taskId)
+        consecutiveFailures = 0
+        if (data) {
+          return { status: 'SUCCESS', data }
+        }
+      } catch (e) {
+        consecutiveFailures++
+        if (consecutiveFailures >= 5 || !(e instanceof RHV2Error)) {
+          throw e
+        }
+        await new Promise((r) => setTimeout(r, Math.min(consecutiveFailures * 2, 10) * 1000))
+      }
+    }
+
+    throw new RHV2Error(`Task ${taskId} timed out after ${timeoutMs / 60000}min`)
+  }
+
+  async run(endpoint, payload, localFiles) {
+    const preparedPayload = { ...payload }
+
+    if (localFiles) {
+      for (const [key, files] of Object.entries(localFiles)) {
+        const fileList = Array.isArray(files) ? files : [files]
+        const urls = []
+        for (const file of fileList) {
+          const buffer = typeof file === 'string' ? file : file.buffer
+          const name = file.name || 'upload'
+          const url = await this.uploadFile(buffer, name)
+          urls.push(url)
+        }
+        preparedPayload[key] = fileList.length === 1 ? urls[0] : urls
+      }
+    }
+
+    const taskId = await this.submit(endpoint, preparedPayload)
+    const result = await this.pollTask(taskId)
+    return { taskId, outputs: extractOutputs(result.data), rawResponse: result.data }
+  }
+}
+
+export function extractOutputs(response) {
+  const results = response.results || []
+  const outputs = []
+  for (const item of results) {
+    if (!item || typeof item !== 'object') continue
+    const value = item.url || item.outputUrl || item.text || item.content || item.output
+    if (value) outputs.push(String(value))
+  }
+  if (outputs.length === 0) {
+    throw new RHV2Error('No outputs found in final response')
+  }
+  return outputs
 }

@@ -1,9 +1,8 @@
 import { Worker, Queue } from 'bullmq'
-import { readFileSync } from 'fs'
+import { readFileSync, existsSync } from 'fs'
 import prisma from '../prisma/client.js'
 import { getSession } from '../services/session-manager.js'
-import { RHV2Client, parseNodeInfoList } from '../../skills/runninghub/rh-v2-client.js'
-import { ModelRouter } from '../../skills/runninghub/model-router.js'
+import { RHV2Client, extractOutputs } from '../../skills/runninghub/rh-v2-client.js'
 
 const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379'
 const u = new URL(REDIS_URL)
@@ -12,10 +11,80 @@ const connection = { host: u.hostname, port: parseInt(u.port || '6379') }
 const RH_BASE_V1 = 'https://rhtv.runninghub.cn'
 const RH_COOKIE = process.env.RUNNINGHUB_COOKIE || ''
 const RH_API_KEY = process.env.RH_API_KEY || ''
-const RH_API_BASE_URL = process.env.RH_API_BASE_URL || 'https://www.runninghub.cn'
+const RH_API_BASE_URL = process.env.RH_API_BASE_URL || 'https://www.runninghub.cn/openapi/v2'
 
 const GEN_POLL_INTERVAL = 10000
 const GEN_POLL_TIMEOUT = 10 * 60 * 1000
+
+async function generateViaV2(task, session) {
+  const ctx = session.context || {}
+
+  if (!ctx.selectedModel?.endpoint) {
+    throw new Error('V2 模式需要 selectedModel.endpoint')
+  }
+
+  const client = new RHV2Client(RH_API_KEY, RH_API_BASE_URL)
+
+  const localFiles = {}
+  if ((ctx.intent?.hasImage || ctx.intent?.hasVideo) && (session.files || []).length > 0) {
+    for (const file of session.files) {
+      const fileBuffer = file.buffer || (file.path && existsSync(file.path) ? readFileSync(file.path) : Buffer.from(''))
+      const model = ctx.selectedModel
+      const imageFields = model.inputTypes?.includes('image') ? ['imageUrl', 'imageUrls', 'image'] : []
+      const videoFields = model.inputTypes?.includes('video') ? ['videoUrl', 'videoUrls', 'video'] : []
+
+      const fieldKey = imageFields[0] || videoFields[0] || 'imageUrl'
+      const filesList = localFiles[fieldKey] || []
+      filesList.push({ buffer: fileBuffer, name: file.name || `upload.${file.type?.startsWith('video') ? 'mp4' : 'png'}` })
+      localFiles[fieldKey] = filesList
+    }
+  }
+
+  const payload = buildV2Payload(ctx.selectedModel, localFiles)
+
+  console.log(`[gen-worker] V2 submitting to ${ctx.selectedModel.endpoint}`)
+  const result = await client.run(ctx.selectedModel.endpoint, payload, localFiles)
+  console.log(`[gen-worker] V2 task ${result.taskId} completed, outputs: ${result.outputs.length}`)
+
+  return {
+    videoUrl: result.outputs[0],
+    rhTaskId: result.taskId,
+    outputs: result.outputs,
+    rawResponse: result.rawResponse,
+  }
+}
+
+function buildV2Payload(selectedModel, localFiles) {
+  const fields = selectedModel.fields || []
+  const params = selectedModel.params || {}
+  const payload = {}
+
+  for (const field of fields) {
+    const key = field.fieldName || field.fieldKey
+    if (!key) continue
+
+    if (params[key] !== undefined) {
+      payload[key] = params[key]
+    } else if (field.fieldValue !== undefined && field.fieldValue !== '') {
+      payload[key] = coerceValue(field, field.fieldValue)
+    }
+  }
+
+  for (const [fileKey] of Object.entries(localFiles)) {
+    if (!payload[fileKey]) {
+      payload[fileKey] = ''
+    }
+  }
+
+  return payload
+}
+
+function coerceValue(field, value) {
+  if (field.fieldType === 'INT' || field.type === 'INT') return parseInt(value, 10)
+  if (field.fieldType === 'FLOAT' || field.type === 'FLOAT') return parseFloat(value)
+  if (field.fieldType === 'BOOLEAN' || field.type === 'BOOLEAN') return value === 'true' || value === true
+  return String(value)
+}
 
 async function submitToRunningHubV1(task, session) {
   if (!RH_COOKIE) throw new Error('RUNNINGHUB_COOKIE 未配置')
@@ -63,63 +132,6 @@ async function pollRunningHubV1(rhTaskId) {
   throw new Error(`RunningHub V1 任务超时 (${GEN_POLL_TIMEOUT / 60000}min)`)
 }
 
-async function generateViaV2(client, task, session) {
-  const ctx = session.context || {}
-  const router = new ModelRouter()
-
-  if (!ctx.selectedModel?.endpoint) {
-    throw new Error('V2 模式需要 selectedModel.endpoint')
-  }
-
-  const model = router.getModelSchema(ctx.selectedModel.endpoint)
-  if (!model) {
-    throw new Error(`模型 ${ctx.selectedModel.endpoint} 在 registry 中未找到`)
-  }
-
-  const uploadResults = {}
-
-  if ((ctx.intent?.hasImage || ctx.intent?.hasVideo) && (session.files || []).length > 0) {
-    for (const file of session.files) {
-      const fileType = file.type?.startsWith('video') ? 'video' : 'image'
-      const fileBuffer = file.buffer || (file.path ? readFileSync(file.path) : Buffer.from(''))
-
-      const fileField = model.fields?.find(
-        (f) => f.fieldType === 'IMAGE' || f.fieldType === 'VIDEO'
-      )
-      if (fileField) {
-        const result = await client.uploadFile(fileBuffer, file.name || 'upload', fileType)
-        uploadResults[`${fileField.nodeId}:${fileField.fieldName}`] = {
-          fileName: result.fileName,
-          fileType: result.fileType,
-        }
-      }
-    }
-  }
-
-  const nodeInfoList = parseNodeInfoList(model, ctx.selectedModel.params || {}, uploadResults)
-  const webappId = model.endpoint
-
-  console.log(`[gen-worker] V2 submitting to ${model.name || webappId}`)
-  const { taskId } = await client.submitTask(webappId, nodeInfoList)
-  console.log(`[gen-worker] V2 task: ${taskId}`)
-
-  const result = await client.pollTask(taskId, GEN_POLL_TIMEOUT)
-
-  let videoUrl = ''
-  for (const output of (result.outputs || [])) {
-    if (output.type === 'video' && output.url) { videoUrl = output.url; break }
-    if (output.type === 'image' && output.url && !videoUrl) { videoUrl = output.url }
-  }
-  if (typeof result.outputs === 'string') videoUrl = result.outputs
-
-  if (!videoUrl) {
-    console.warn('[gen-worker] V2 completed but no media URL found in outputs:', JSON.stringify(result.outputs).substring(0, 200))
-    videoUrl = JSON.stringify(result.outputs)
-  }
-
-  return { videoUrl, rhTaskId: taskId, outputs: result.outputs }
-}
-
 async function generatePlaceholderVideo(task, session) {
   console.log(`[gen-worker] 使用占位视频 (无 API 配置)`)
   const ctx = session?.context || {}
@@ -150,11 +162,10 @@ const worker = new Worker('generation', async (job) => {
 
     if (RH_API_KEY) {
       try {
-        const client = new RHV2Client(RH_API_KEY, RH_API_BASE_URL)
-        const v2Result = await generateViaV2(client, task, session)
+        const v2Result = await generateViaV2(task, session)
         videoUrl = v2Result.videoUrl
         rhTaskId = v2Result.rhTaskId
-        rhOutputs = v2Result.outputs
+        rhOutputs = v2Result.rawResponse
         console.log(`[gen-worker] V2 video generated: ${videoUrl}`)
       } catch (e) {
         console.warn(`[gen-worker] V2 生成失败: ${e.message}, 尝试 V1 回退...`)
