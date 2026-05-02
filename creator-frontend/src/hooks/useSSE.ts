@@ -3,7 +3,7 @@ import { sendMessage } from '../services/api';
 
 interface SSEOptions {
   onChunk: (text: string) => void;
-  onDone: (info: { round: number; forceConfirm: boolean }) => void;
+  onDone: (info: { round: number; forceConfirm: boolean; context?: Record<string, unknown> }) => void;
   onError: (err: string) => void;
 }
 
