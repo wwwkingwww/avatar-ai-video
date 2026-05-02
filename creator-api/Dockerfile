@@ -6,6 +6,7 @@ COPY creator-frontend/ ./
 RUN npm run build
 
 FROM node:20-alpine
+RUN apk add --no-cache openssl1.1-compat
 WORKDIR /app
 COPY creator-api/package.json creator-api/package-lock.json ./
 RUN npm ci --production
