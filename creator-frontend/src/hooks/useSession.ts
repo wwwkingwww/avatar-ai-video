@@ -26,6 +26,7 @@ export function useSession() {
   const [recommendations, setRecommendations] = useState<ModelRecommendation[]>([]);
   const pendingAttachments = useRef<string[]>([]);
   const lastContext = useRef<Record<string, unknown>>({});
+  const pendingInit = useRef<Promise<string> | null>(null);
   const sse = useSSE();
 
   function inferTag(content: string, ctx: Record<string, unknown>): string {
@@ -38,35 +39,53 @@ export function useSession() {
   }
 
   const initSession = useCallback(async () => {
-    setState(initialState);
-    setStreamingText('');
-    setUploadedFiles([]);
-    setRecommendations([]);
-    try {
-      const { sessionId, message, round } = await createSession();
-      const content = stripOptions(message)
-      const msg: Message = {
-        id: nextId(), role: 'assistant' as const, content,
-        options: buildOptions({ phase: 'INTENT' }, round, 4),
-        timestamp: Date.now(),
-      }
-      setState((prev) => ({
-        ...prev, sessionId, round,
-        messages: [msg],
-      }));
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : '未知错误';
-      setState((prev) => ({
-        ...prev,
-        messages: [...prev.messages, { id: nextId(), role: 'system', content: `连接失败: ${msg}`, timestamp: Date.now() }],
-      }));
+    if (pendingInit.current) {
+      return pendingInit.current
     }
+
+    const promise = (async () => {
+      setState(initialState);
+      setStreamingText('');
+      setUploadedFiles([]);
+      setRecommendations([]);
+      try {
+        const { sessionId, message, round } = await createSession();
+        const content = stripOptions(message)
+        const msg: Message = {
+          id: nextId(), role: 'assistant' as const, content,
+          options: buildOptions({ phase: 'INTENT' }, round, 4),
+          timestamp: Date.now(),
+        }
+        setState((prev) => ({
+          ...prev, sessionId, round,
+          messages: [msg],
+        }));
+        return sessionId;
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : '未知错误';
+        setState((prev) => ({
+          ...prev,
+          messages: [...prev.messages, { id: nextId(), role: 'system', content: `连接失败: ${msg}`, timestamp: Date.now() }],
+        }));
+        throw e;
+      }
+    })();
+
+    pendingInit.current = promise;
+    promise.finally(() => { pendingInit.current = null; });
+    return promise;
   }, []);
 
+  const ensureSession = useCallback(async () => {
+    if (state.sessionId) return state.sessionId;
+    return initSession();
+  }, [state.sessionId, initSession]);
+
   const handleFileUpload = useCallback(async (file: File) => {
-    if (!state.sessionId) return;
+    const sid = await ensureSession();
+    if (!sid) return;
     try {
-      const result = await uploadFile(state.sessionId, file);
+      const result = await uploadFile(sid, file);
       setUploadedFiles((prev) => [...prev, result]);
       pendingAttachments.current.push(result.url);
     } catch (e) {
@@ -76,10 +95,14 @@ export function useSession() {
         messages: [...prev.messages, { id: nextId(), role: 'system', content: `文件上传失败: ${msg}`, timestamp: Date.now() }],
       }));
     }
-  }, [state.sessionId]);
+  }, [ensureSession]);
 
-  const sendUserMessage = useCallback((content: string) => {
-    if (!state.sessionId || state.isStreaming) return;
+  const sendUserMessage = useCallback(async (content: string) => {
+    const sid = await ensureSession();
+    if (!sid) return;
+
+    const currentState = state;
+    if (currentState.isStreaming) return;
 
     const attachments = [...pendingAttachments.current];
     pendingAttachments.current = [];
@@ -90,7 +113,7 @@ export function useSession() {
     setState((prev) => ({ ...prev, isStreaming: true, messages: [...prev.messages, userMsg] }));
     setStreamingText('');
 
-    sse.connect(state.sessionId, taggedContent, attachments, {
+    sse.connect(sid, taggedContent, attachments, {
       onChunk: (text) => { setStreamingText((prev) => prev + text); },
       onDone: async (info) => {
         setStreamingText((prev) => {
@@ -125,27 +148,29 @@ export function useSession() {
         setStreamingText('');
       },
     });
-  }, [state.sessionId, state.isStreaming, sse]);
+  }, [state, sse, ensureSession]);
 
   const backToChat = useCallback(() => {
     setState((prev) => ({ ...prev, status: 'chatting' }));
   }, []);
 
   const goToConfirm = useCallback(async () => {
-    if (!state.sessionId) return;
+    const sid = await ensureSession();
+    if (!sid) return;
     try {
-      await getConfirmData(state.sessionId);
+      await getConfirmData(sid);
       setState((prev) => ({ ...prev, status: 'confirming' }));
     } catch (e) {
       const msg = e instanceof Error ? e.message : '获取确认数据失败';
       setState((prev) => ({ ...prev, messages: [...prev.messages, { id: nextId(), role: 'system', content: msg, timestamp: Date.now() }] }));
     }
-  }, [state.sessionId]);
+  }, [ensureSession]);
 
   const handleSubmit = useCallback(async (scheduledAt?: string | null): Promise<TaskResult | null> => {
-    if (!state.sessionId) return null;
+    const sid = await ensureSession();
+    if (!sid) return null;
     try {
-      const result = await submitTask(state.sessionId, scheduledAt);
+      const result = await submitTask(sid, scheduledAt);
       setState((prev) => ({ ...prev, status: 'submitted' }));
       return result;
     } catch (e) {
@@ -153,7 +178,7 @@ export function useSession() {
       setState((prev) => ({ ...prev, messages: [...prev.messages, { id: nextId(), role: 'system', content: `提交失败: ${msg}`, timestamp: Date.now() }] }));
       return null;
     }
-  }, [state.sessionId]);
+  }, [ensureSession]);
 
-  return { state, streamingText, uploadedFiles, recommendations, initSession, sendUserMessage, handleFileUpload, goToConfirm, handleSubmit, backToChat };
+  return { state, streamingText, uploadedFiles, recommendations, initSession, ensureSession, sendUserMessage, handleFileUpload, goToConfirm, handleSubmit, backToChat };
 }

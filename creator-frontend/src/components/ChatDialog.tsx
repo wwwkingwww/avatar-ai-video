@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { cn } from '@/lib/utils'
+import { Skeleton } from '@/components/ui/skeleton'
 import type { Message } from '../types'
 
 interface ChatDialogProps {
@@ -12,10 +13,11 @@ interface ChatDialogProps {
   messages: Message[]
   streamingText: string
   isStreaming: boolean
+  initLoading?: boolean
   onSend: (text: string) => void
 }
 
-export function ChatDialog({ open, onOpenChange, messages, streamingText, isStreaming, onSend }: ChatDialogProps) {
+export function ChatDialog({ open, onOpenChange, messages, streamingText, isStreaming, initLoading, onSend }: ChatDialogProps) {
   const [text, setText] = useState('')
   const scrollRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
@@ -68,7 +70,19 @@ export function ChatDialog({ open, onOpenChange, messages, streamingText, isStre
         </DialogHeader>
 
         <div ref={scrollRef} className="flex-1 overflow-auto px-4 py-3 space-y-3">
-          {messages.length === 0 && (
+          {initLoading && (
+            <div className="space-y-3">
+              <div className="flex gap-2.5">
+                <Avatar size="sm"><AvatarFallback>AI</AvatarFallback></Avatar>
+                <div className="bg-muted rounded-xl px-3.5 py-2.5 max-w-[85%]">
+                  <Skeleton className="h-3 w-48" />
+                  <Skeleton className="h-3 w-32 mt-1.5" />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {!initLoading && messages.length === 0 && (
             <div className="flex gap-2.5">
               <Avatar size="sm">
                 <AvatarFallback>AI</AvatarFallback>
@@ -149,9 +163,9 @@ export function ChatDialog({ open, onOpenChange, messages, streamingText, isStre
               value={text}
               onChange={(e) => setText(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="输入文字或点击上方按钮快速选择..."
+              placeholder={initLoading ? "正在连接 AI..." : "输入文字或点击上方按钮快速选择..."}
               rows={1}
-              disabled={isStreaming}
+              disabled={isStreaming || initLoading}
               className="min-h-0 resize-none"
             />
             <Button size="sm" onClick={handleSend} disabled={isStreaming || !text.trim()}>

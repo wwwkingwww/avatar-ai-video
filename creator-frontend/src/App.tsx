@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -20,7 +20,7 @@ const FILTER_TABS = [
 ] as const
 
 export default function App() {
-  const { state, streamingText, recommendations, initSession, sendUserMessage, goToConfirm, handleSubmit, backToChat } = useSession()
+  const { state, streamingText, recommendations, initSession, ensureSession, sendUserMessage, goToConfirm, handleSubmit, backToChat } = useSession()
   const [result, setResult] = useState<TaskResult | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [confirmOpen, setConfirmOpen] = useState(false)
@@ -28,7 +28,7 @@ export default function App() {
   const [activeFilter, setActiveFilter] = useState<string>('all')
   const [projects, setProjects] = useState<ProjectData[]>([])
   const [loading, setLoading] = useState(true)
-  const didInit = useRef(false)
+  const [initLoading, setInitLoading] = useState(false)
 
   const fetchProjects = useCallback(async () => {
     try {
@@ -60,21 +60,21 @@ export default function App() {
   }
 
   const openNewDialog = useCallback(() => {
-    setDialogOpen(true)
-    if (!didInit.current) {
-      didInit.current = true
-      initSession()
-    }
-  }, [initSession])
+    setDialogOpen(true);
+    (async () => {
+      setInitLoading(true);
+      try { await ensureSession(); } catch {}
+      setInitLoading(false);
+    })();
+  }, [ensureSession]);
 
-  const handleQuickSend = useCallback((text: string) => {
-    setDialogOpen(true)
-    if (!didInit.current) {
-      didInit.current = true
-      initSession()
-    }
-    sendUserMessage(text)
-  }, [initSession, sendUserMessage])
+  const handleQuickSend = useCallback(async (text: string) => {
+    setDialogOpen(true);
+    setInitLoading(true);
+    try { await ensureSession(); } catch {}
+    setInitLoading(false);
+    await sendUserMessage(text);
+  }, [ensureSession, sendUserMessage]);
 
   const handleDialogSubmit = useCallback(async (scheduledAt: string | null) => {
     const r = await handleSubmit(scheduledAt)
@@ -86,12 +86,11 @@ export default function App() {
     }
   }, [handleSubmit, fetchProjects])
 
-  const handleNewTask = useCallback(() => {
+  const handleNewTask = useCallback(async () => {
     setResult(null)
     setResultOpen(false)
     setDialogOpen(false)
-    didInit.current = false
-    initSession()
+    try { await initSession(); } catch {}
   }, [initSession])
 
   return (
@@ -182,6 +181,7 @@ export default function App() {
           messages={state.messages}
           streamingText={streamingText}
           isStreaming={state.isStreaming}
+          initLoading={initLoading}
           onSend={sendUserMessage}
         />
 
