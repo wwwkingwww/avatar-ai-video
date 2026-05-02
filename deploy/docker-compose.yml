@@ -16,6 +16,17 @@ services:
       - redis_data:/data
     command: redis-server --appendonly yes
 
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: avatar
+      POSTGRES_PASSWORD: avatar123
+      POSTGRES_DB: avatar_video
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
   minio:
     image: minio/minio
     ports:
@@ -67,12 +78,15 @@ services:
       MINIO_BUCKET: creator-uploads
       MINIO_ACCESS_KEY: avatar
       MINIO_SECRET_KEY: ${MINIO_PASSWORD:-changeme123}
+      DATABASE_URL: postgresql://avatar:avatar123@postgres:5432/avatar_video
     depends_on:
       - openclaw
       - redis
       - minio
+      - postgres
 
 volumes:
   redis_data:
   minio_data:
   openclaw_data:
+  postgres_data:
