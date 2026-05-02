@@ -6,6 +6,7 @@ import { messagesRouter } from './routes/messages.js';
 import { uploadRouter } from './routes/upload.js';
 import { submitRouter } from './routes/submit.js';
 import { capabilitiesRouter } from './routes/capabilities.js';
+import { tasksRouter } from './routes/tasks.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const rootDir = join(__dirname, '..');
@@ -59,9 +60,7 @@ app.use('/api/sessions', messagesRouter);
 app.use('/api/sessions', uploadRouter);
 app.use('/api/sessions', submitRouter);
 app.use('/api/capabilities', capabilitiesRouter);
-
-app.use('/phone-files', express.static(join(__dirname, 'phone-agent')));
-app.use('/phone-files/shared', express.static(join(__dirname, 'shared')));
+app.use('/api/tasks', tasksRouter);
 
 const frontendDist = join(__dirname, '..', 'creator-frontend', 'dist');
 app.use(express.static(frontendDist));
