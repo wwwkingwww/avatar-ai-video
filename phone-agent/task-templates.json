@@ -1,0 +1,20 @@
+{
+  "browse_douyin": {
+    "platform": "douyin",
+    "description": "打开抖音浏览N个视频并随机点赞",
+    "buildActions": "function(rounds) { const actions = [{ type: 'launch', package: 'com.ss.android.ugc.aweme' }, { type: 'wait', ms: 4000 }]; for (let i = 0; i < rounds; i++) { const watchMs = 2000 + Math.floor(Math.random() * 3000); const shouldLike = Math.random() > 0.4; actions.push({ type: 'wait', ms: watchMs }); if (shouldLike) { const likeY = 1100 + Math.floor(Math.random() * 300); actions.push({ type: 'tap', x: 960, y: likeY }); actions.push({ type: 'wait', ms: 300 }); } if (i < rounds - 1) { actions.push({ type: 'swipe', x1: 540, y1: 1800, x2: 540, y2: 400, duration: 400 }); actions.push({ type: 'wait', ms: 1500 }); } } actions.push({ type: 'home' }); return actions; }",
+    "defaultRounds": 5
+  },
+  "browse_kuaishou": {
+    "platform": "kuaishou",
+    "description": "打开快手浏览N个视频并随机点赞",
+    "buildActions": "function(rounds) { const actions = [{ type: 'launch', package: 'com.kuaishou.nebula' }, { type: 'wait', ms: 4000 }]; for (let i = 0; i < rounds; i++) { const watchMs = 2000 + Math.floor(Math.random() * 3000); const shouldLike = Math.random() > 0.4; actions.push({ type: 'wait', ms: watchMs }); if (shouldLike) { actions.push({ type: 'tap', x: 960, y: 1200 }); actions.push({ type: 'wait', ms: 300 }); } if (i < rounds - 1) { actions.push({ type: 'swipe', x1: 540, y1: 1800, x2: 540, y2: 400, duration: 400 }); actions.push({ type: 'wait', ms: 1500 }); } } actions.push({ type: 'home' }); return actions; }",
+    "defaultRounds": 5
+  },
+  "browse_xiaohongshu": {
+    "platform": "xiaohongshu",
+    "description": "打开小红书浏览N个笔记并随机点赞",
+    "buildActions": "function(rounds) { const actions = [{ type: 'launch', package: 'com.xingin.xhs' }, { type: 'wait', ms: 4000 }]; for (let i = 0; i < rounds; i++) { const watchMs = 2000 + Math.floor(Math.random() * 3000); const shouldLike = Math.random() > 0.4; actions.push({ type: 'wait', ms: watchMs }); if (shouldLike) { actions.push({ type: 'tap', x: 960, y: 1200 }); actions.push({ type: 'wait', ms: 300 }); } if (i < rounds - 1) { actions.push({ type: 'swipe', x1: 540, y1: 1800, x2: 540, y2: 400, duration: 400 }); actions.push({ type: 'wait', ms: 1500 }); } } actions.push({ type: 'home' }); return actions; }",
+    "defaultRounds": 5
+  }
+}

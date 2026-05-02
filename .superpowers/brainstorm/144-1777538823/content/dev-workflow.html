@@ -1,0 +1,181 @@
+<h2>开发 / 测试 / 部署 三环境流水线</h2>
+<p class="subtitle">本地写代码 → 手机验证 → 服务器运行</p>
+
+<div class="section">
+  <h3>环境角色分配</h3>
+  <div style="background: #2d2d44; border-radius: 12px; padding: 20px;">
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px;">
+
+      <div style="background: #1a1a2e; border-radius: 8px; padding: 14px; border-left: 3px solid #6366f1;">
+        <strong style="color: #6366f1;">💻 Windows 本地</strong>
+        <p style="color: #aaa; font-size: 12px; margin-top: 6px; line-height: 1.5;">
+          写代码、改代码<br/>
+          <span style="color: #10b981;">Vite Dev Server</span> 跑前端<br/>
+          可用 <span style="color: #8b5cf6;">VS Code</span> 远程编辑服务器文件<br/>
+          <span style="color: #f59e0b;">不跑</span> Redis/MQTT/MinIO
+        </p>
+      </div>
+
+      <div style="background: #1a1a2e; border-radius: 8px; padding: 14px; border-left: 3px solid #10b981;">
+        <strong style="color: #10b981;">📱 Android 手机</strong>
+        <p style="color: #aaa; font-size: 12px; margin-top: 6px; line-height: 1.5;">
+          <span style="color: #10b981;">Termux</span> 运行 phone-agent<br/>
+          浏览器打开前端页面<br/>
+          ADB/无障碍服务触控<br/>
+          抖音/快手/小红书 App 发布
+        </p>
+      </div>
+
+      <div style="background: #1a1a2e; border-radius: 8px; padding: 14px; border-left: 3px solid #ef4444;">
+        <strong style="color: #ef4444;">🖥️ Linux 服务器</strong>
+        <p style="color: #aaa; font-size: 12px; margin-top: 6px; line-height: 1.5;">
+          Docker Compose 全栈<br/>
+          OpenClaw + Redis + MinIO<br/>
+          Mosquitto MQTT<br/>
+          <span style="color: #10b981;">creator-api :3001</span>
+        </p>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>核心原则</h3>
+  <div style="background: #2d2d44; border-radius: 12px; padding: 16px;">
+    <div style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 10px;">
+      <div style="color: #10b981; font-size: 20px;">1</div>
+      <div><strong style="color: #e0e0e0;">所有有状态服务只跑在服务器上</strong><p style="color: #888; font-size: 13px;">Redis、MQTT、MinIO、OpenClaw 都在服务器 Docker 里，本地不装</p></div>
+    </div>
+    <div style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 10px;">
+      <div style="color: #10b981; font-size: 20px;">2</div>
+      <div><strong style="color: #e0e0e0;">creator-frontend 双模式</strong><p style="color: #888; font-size: 13px;">开发时跑在 Windows（Vite热更新），发布时构建到 dist 由服务器 serve</p></div>
+    </div>
+    <div style="display: flex; align-items: flex-start; gap: 12px;">
+      <div style="color: #10b981; font-size: 20px;">3</div>
+      <div><strong style="color: #e0e0e0;">creator-api 更新靠 Docker 重新构建</strong><p style="color: #888; font-size: 13px;">改完代码 push 到服务器 → docker compose build creator-api → docker compose up -d</p></div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>场景一：本地开发前端 + 服务器后端（日常）</h3>
+  <div class="mockup">
+    <div class="mockup-header">日常改 UI 时的通信链路</div>
+    <div class="mockup-body" style="padding: 16px; background: #1a1a2e; border-radius: 12px; font-family: monospace; font-size: 12px; line-height: 1.8;">
+      <span style="color: #888;"># 1. 修改 vite.config.ts 的 proxy 指向服务器</span><br/>
+      <span style="color: #888;"># 创建 .env.development 文件：</span><br/>
+      <span style="color: #8b5cf6;">VITE_API_TARGET</span>=<span style="color: #10b981;">http://192.168.x.x:3001</span><br/>
+      <br/>
+      <span style="color: #888;"># 2. Windows 启动前端 dev server</span><br/>
+      $ cd creator-frontend<br/>
+      $ npm run dev &nbsp;→ <span style="color: #6366f1;">http://192.168.x.x:5173</span><br/>
+      <br/>
+      <span style="color: #888;"># 3. 手机浏览器打开</span><br/>
+      <span style="color: #6366f1;">http://192.168.x.x:5173</span><br/>
+      &nbsp;&nbsp;&nbsp;└─ /api/* ──proxy──▶ <span style="color: #10b981;">服务器:3001</span><br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└─ OpenClaw:3000<br/>
+      <br/>
+      <span style="color: #f59e0b;">✨ 好处：改完前端代码自动热更新，手机立刻看到效果</span>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>场景二：改 creator-api 后端代码</h3>
+  <div class="mockup">
+    <div class="mockup-header">改完 API 代码后更新服务器</div>
+    <div class="mockup-body" style="padding: 16px; background: #1a1a2e; border-radius: 12px; font-family: monospace; font-size: 12px; line-height: 1.8;">
+      <span style="color: #888;"># 1. Windows 本地改代码</span><br/>
+      $ vim creator-api/routes/messages.js<br/>
+      <br/>
+      <span style="color: #888;"># 2. 推送到服务器（git push 或 rsync）</span><br/>
+      $ git push<br/>
+      $ ssh user@server<br/>
+      $ cd /opt/avatar-ai-video<br/>
+      $ git pull<br/>
+      <br/>
+      <span style="color: #888;"># 3. 重新构建并重启</span><br/>
+      $ docker compose build creator-api<br/>
+      $ docker compose up -d creator-api<br/>
+      <br/>
+      <span style="color: #f59e0b;">⏱ 每次改 API 需要几十秒重建，不算重</span>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>场景三：测试手机 Agent</h3>
+  <div class="mockup">
+    <div class="mockup-header">手机端调试 ADB/无障碍操作</div>
+    <div class="mockup-body" style="padding: 16px; background: #1a1a2e; border-radius: 12px; font-family: monospace; font-size: 12px; line-height: 1.8;">
+      <span style="color: #888;"># 1. 手机 Termux 里启动 agent</span><br/>
+      $ cd phone-agent<br/>
+      $ <span style="color: #8b5cf6;">MQTT_BROKER</span>=<span style="color: #10b981;">mqtt://server-tailscale-ip:1883</span> \<br/>
+      &nbsp;&nbsp;<span style="color: #8b5cf6;">PHONE_ID</span>=phone_01 \<br/>
+      &nbsp;&nbsp;<span style="color: #8b5cf6;">PLATFORM</span>=douyin \<br/>
+      &nbsp;&nbsp;node agent.js<br/>
+      <br/>
+      <span style="color: #888;"># 2. 看到日志</span><br/>
+      [MQTT] connected to server<br/>
+      [STATUS] online, battery=85%<br/>
+      <br/>
+      <span style="color: #888;"># 3. 服务器手动发测试任务</span><br/>
+      $ docker exec -it mosquitto mosquitto_pub \<br/>
+      &nbsp;&nbsp;-t phone/phone_01/task \<br/>
+      &nbsp;&nbsp;-m '{"task_id":"test","actions":[{"type":"screenshot","name":"test"}]}'<br/>
+      <br/>
+      <span style="color: #888;"># 4. 手机 Agent 收到任务 → 执行 → 回传状态</span><br/>
+      [TASK] test - 发布成功<br/>
+      <br/>
+      <span style="color: #f59e0b;">💡 手机端改代码：用 VS Code Remote SSH 连 Termux 直接编辑</span>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>场景四：完整端到端测试</h3>
+  <div style="background: #2d2d44; border-radius: 12px; padding: 16px; font-family: monospace; font-size: 12px; line-height: 1.8;">
+    <span style="color: #888;"># 前置条件：服务器全栈运行、手机 agent 在线</span><br/><br/>
+    <span style="color: #888;"># 手机浏览器打开前端</span><br/>
+    <span style="color: #6366f1;">http://server-ip:3001</span><br/><br/>
+    <span style="color: #888;"># → 创建会话 → 4轮对话 → 确认提交</span><br/>
+    <span style="color: #888;"># → creator-api → OpenClaw → RunningHub Skill</span><br/>
+    <span style="color: #888;"># → 视频生成 → MinIO 存储 → Dispatch Skill</span><br/>
+    <span style="color: #888;"># → MQTT 下发 → 手机 Agent 收到 → 下载视频</span><br/>
+    <span style="color: #888;"># → ADB 操作抖音/快手/小红书 App → 发布成功</span>
+  </div>
+</div>
+
+<div class="section">
+  <h3>关键配置：让 Vite 代理指向服务器</h3>
+  <p style="color: #aaa; font-size: 13px; margin-bottom: 8px;">修改一个文件，让手机访问本地前端时 API 自动走服务器</p>
+  <div style="background: #1a1a2e; border-radius: 8px; padding: 14px; font-family: monospace; font-size: 12px;">
+    <span style="color: #888;">// creator-frontend/vite.config.ts</span><br/>
+    <span style="color: #8b5cf6;">export default</span> defineConfig({<br/>
+    &nbsp;&nbsp;plugins: [react()],<br/>
+    &nbsp;&nbsp;server: {<br/>
+    &nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #10b981;">host</span>: <span style="color: #10b981;">'0.0.0.0'</span>, &nbsp;<span style="color: #888;">// 允许局域网访问</span><br/>
+    &nbsp;&nbsp;&nbsp;&nbsp;port: 5173,<br/>
+    &nbsp;&nbsp;&nbsp;&nbsp;proxy: {<br/>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #f59e0b;">'/api'</span>: {<br/>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;target: <span style="color: #10b981;">'http://你的服务器IP:3001'</span>,<br/>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;changeOrigin: true,<br/>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br/>
+    &nbsp;&nbsp;&nbsp;&nbsp;}<br/>
+    &nbsp;&nbsp;}<br/>
+    });
+  </div>
+</div>
+
+<div style="margin-top: 24px; padding: 16px; background: linear-gradient(135deg, #1a1a2e, #2d2d44); border-radius: 12px; text-align: center;">
+  <p style="color: #e0e0e0; font-size: 14px; font-weight: 600; margin-bottom: 4px;">一句话总结</p>
+  <p style="color: #aaa; font-size: 13px;">
+    <strong style="color: #6366f1;">Windows</strong> 只跑 Vite（前端热更新）→ 
+    <strong style="color: #10b981;">服务器</strong> 跑全部后端 → 
+    <strong style="color: #f59e0b;">手机</strong> 浏览器 + Termux Agent
+  </p>
+  <p style="color: #888; font-size: 12px; margin-top: 8px;">
+    三者通过局域网 / Tailscale 互联，开发改代码不需要部署到服务器，只有 API 改动才需要 docker compose rebuild
+  </p>
+</div>

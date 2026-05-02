@@ -1,0 +1,99 @@
+<h2>Web 前端 vs Flutter — 不冲突</h2>
+<p class="subtitle">两种方案是互补关系，不是替代关系</p>
+
+<div class="section">
+  <h3>项目中的"两个客户端"</h3>
+
+  <div class="split">
+    <div class="mockup">
+      <div class="mockup-header">📱 创作者端（我们现在在设计的）</div>
+      <div class="mockup-body" style="padding: 16px;">
+        <p style="color: #e0e0e0; font-size: 13px; margin-bottom: 8px;"><strong>用途：</strong>自媒体创作者提交视频需求</p>
+        <p style="color: #aaa; font-size: 12px; margin-bottom: 4px;">• 打开手机浏览器访问</p>
+        <p style="color: #aaa; font-size: 12px; margin-bottom: 4px;">• 对话式收集需求（4轮）</p>
+        <p style="color: #aaa; font-size: 12px; margin-bottom: 4px;">• 上传素材</p>
+        <p style="color: #aaa; font-size: 12px;">• 提交到 OpenClaw 执行</p>
+        <div style="margin-top: 12px; padding: 8px; background: #6366f1; border-radius: 6px; text-align: center;">
+          <span style="color: white; font-size: 13px;">React / Vue / HTML 任选</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="mockup">
+      <div class="mockup-header">🤖 手机 Agent 端（已有 Node.js）</div>
+      <div class="mockup-body" style="padding: 16px;">
+        <p style="color: #e0e0e0; font-size: 13px; margin-bottom: 8px;"><strong>用途：</strong>在 Android 手机上自动操作 App</p>
+        <p style="color: #aaa; font-size: 12px; margin-bottom: 4px;">• 接收 MQTT 任务</p>
+        <p style="color: #aaa; font-size: 12px; margin-bottom: 4px;">• 模拟触控发布视频</p>
+        <p style="color: #aaa; font-size: 12px; margin-bottom: 4px;">• 截图回传服务器</p>
+        <p style="color: #aaa; font-size: 12px;">• 心跳上报状态</p>
+        <div style="margin-top: 12px; padding: 8px; background: #10b981; border-radius: 6px; text-align: center;">
+          <span style="color: white; font-size: 13px;">Node.js (Termux) / 未来 APK</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>与 Flutter 的关系</h3>
+  <div style="background: #2d2d44; border-radius: 12px; padding: 16px;">
+    
+    <div style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 14px;">
+      <div style="font-size: 24px; flex-shrink: 0;">✅</div>
+      <div>
+        <strong style="color: #10b981;">完全不冲突</strong>
+        <p style="color: #aaa; margin: 4px 0 0;">Web 前端（React/Vue/HTML）和 Flutter App 都是创作者端的两种实现方式，后端 API 是同一套。就像同一个后台可以同时有 Web 版和 App 版。</p>
+      </div>
+    </div>
+
+    <div style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 14px;">
+      <div style="font-size: 24px; flex-shrink: 0;">🔄</div>
+      <div>
+        <strong style="color: #8b5cf6;">渐进式：先 Web 后 Flutter</strong>
+        <p style="color: #aaa; margin: 4px 0 0;">先用 Web（React/Vue）快速上线验证整个流程，后期如果创作者需要更好的移动端体验，再用 Flutter 做一个原生 App 替换前端层。后端 Server 和 API 一行都不用改。</p>
+      </div>
+    </div>
+
+    <div style="display: flex; align-items: flex-start; gap: 12px;">
+      <div style="font-size: 24px; flex-shrink: 0;">📋</div>
+      <div>
+        <strong style="color: #6366f1;">项目里已有的 Flutter 规划</strong>
+        <p style="color: #aaa; margin: 4px 0 0;">现有文档 <code>phone-agent-apk-design.md</code> 规划的是手机端 Agent 的 APK 方案（替代 Termux+Node.js），运行在发布手机上。这不是创作者端 UI，是另一个子系统。</p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="section">
+  <h3>推荐路径</h3>
+
+  <div class="mockup">
+    <div class="mockup-header">第一阶段 → 第二阶段</div>
+    <div class="mockup-body" style="padding: 16px;">
+      <div style="display: flex; align-items: center; gap: 8px; justify-content: center;">
+        <div style="background: #2d2d44; border-radius: 10px; padding: 12px 18px; text-align: center;">
+          <div style="font-size: 24px;">🌐</div>
+          <div style="color: #e0e0e0; font-size: 14px; font-weight: 600;">Phase 1</div>
+          <div style="color: #6366f1; font-size: 13px;">Web 前端</div>
+          <div style="color: #888; font-size: 11px; margin-top: 4px;">React/Vue/HTML</div>
+          <div style="color: #888; font-size: 11px;">+ Node.js Server</div>
+        </div>
+        <div style="color: #666; font-size: 20px;">→</div>
+        <div style="background: #2d2d44; border-radius: 10px; padding: 12px 18px; text-align: center;">
+          <div style="font-size: 24px;">📱</div>
+          <div style="color: #e0e0e0; font-size: 14px; font-weight: 600;">Phase 2（可选）</div>
+          <div style="color: #10b981; font-size: 13px;">Flutter App</div>
+          <div style="color: #888; font-size: 11px; margin-top: 4px;">替换 Web 前端</div>
+          <div style="color: #888; font-size: 11px;">后端 Server 不变</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p style="color: #aaa; margin-top: 16px; font-size: 13px; text-align: center;">
+  结论：选 React / Vue 做 Phase 1，与未来 Flutter 完全不冲突。<br>
+  后端 API 复用，前端层可随时替换。
+</p>

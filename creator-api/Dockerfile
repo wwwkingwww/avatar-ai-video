@@ -5,8 +5,10 @@ RUN npm ci
 COPY creator-frontend/ ./
 RUN npm run build
 
-FROM node:20-slim
-RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
+FROM node:20-alpine
+RUN apk add --no-cache openssl
+RUN ln -sf /usr/lib/libssl.so.3 /usr/lib/libssl.so.1.1
+RUN ln -sf /usr/lib/libcrypto.so.3 /usr/lib/libcrypto.so.1.1
 WORKDIR /app
 COPY creator-api/package.json creator-api/package-lock.json ./
 RUN npm ci --production

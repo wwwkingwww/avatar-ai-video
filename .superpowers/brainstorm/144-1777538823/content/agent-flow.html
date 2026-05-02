@@ -1,0 +1,110 @@
+<h2>Agent 对话流程设计</h2>
+<p class="subtitle">移动端信息流式对话，OpenClaw 动态提问，最多 4 轮</p>
+
+<div class="section">
+  <h3>核心流程</h3>
+  <div class="mockup">
+    <div class="mockup-header">创作需求收集 → OpenClaw 执行</div>
+    <div class="mockup-body">
+      <div style="padding: 20px; background: #1a1a2e; border-radius: 12px; font-family: sans-serif; max-width: 400px; margin: 0 auto;">
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+          
+          <div style="display: flex; align-items: flex-start; gap: 10px;">
+            <div style="width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #6366f1, #8b5cf6); display: flex; align-items: center; justify-content: center; color: white; font-size: 14px; flex-shrink: 0;">AI</div>
+            <div style="background: #2d2d44; padding: 12px 16px; border-radius: 16px; border-top-left-radius: 4px; color: #e0e0e0; font-size: 14px; line-height: 1.5;">
+              你好！想做什么类型的视频？<br>
+              <span style="color: #8b8cf6;">A. 数字人口播</span><br>
+              <span style="color: #8b8cf6;">B. 科技评测</span><br>
+              <span style="color: #8b8cf6;">C. 产品展示</span>
+              <div style="margin-top: 8px; font-size: 12px; color: #666;">第 1/4 轮</div>
+            </div>
+          </div>
+
+          <div style="display: flex; align-items: flex-start; gap: 10px; flex-direction: row-reverse;">
+            <div style="width: 32px; height: 32px; border-radius: 50%; background: #10b981; display: flex; align-items: center; justify-content: center; color: white; font-size: 12px; flex-shrink: 0;">我</div>
+            <div style="background: #6366f1; padding: 12px 16px; border-radius: 16px; border-top-right-radius: 4px; color: white; font-size: 14px; max-width: 70%;">
+              数字人口播
+            </div>
+          </div>
+
+          <div style="display: flex; align-items: flex-start; gap: 10px;">
+            <div style="width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #6366f1, #8b5cf6); display: flex; align-items: center; justify-content: center; color: white; font-size: 14px; flex-shrink: 0;">AI</div>
+            <div style="background: #2d2d44; padding: 12px 16px; border-radius: 16px; border-top-left-radius: 4px; color: #e0e0e0; font-size: 14px;">
+              <div style="margin-bottom: 6px;">请告诉我视频要表达的核心内容或文案</div>
+              <div style="background: #1a1a2e; border: 1px solid #3d3d5c; border-radius: 8px; padding: 10px; color: #ccc; font-size: 12px;">
+                输入你的文案或想法...
+              </div>
+              <div style="margin-top: 8px; font-size: 12px; color: #666;">第 2/4 轮</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>4 轮轮询结束后</h3>
+  <div class="mockup">
+    <div class="mockup-header">确认页 → 提交到 OpenClaw</div>
+    <div class="mockup-body">
+      <div style="padding: 16px; background: #1a1a2e; border-radius: 12px; max-width: 400px; margin: 0 auto; font-family: sans-serif;">
+        <div style="color: #e0e0e0; font-size: 14px; margin-bottom: 12px;">
+          📋 <strong>需求确认</strong>
+        </div>
+        <div style="background: #2d2d44; border-radius: 8px; padding: 12px; margin-bottom: 12px;">
+          <div style="display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px;">
+            <span style="color: #888;">模板</span>
+            <span style="color: #e0e0e0;">数字人口播</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px;">
+            <span style="color: #888;">文案</span>
+            <span style="color: #e0e0e0;">新品上市介绍...</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px;">
+            <span style="color: #888;">平台</span>
+            <span style="color: #e0e0e0;">抖音、小红书</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px;">
+            <span style="color: #888;">素材</span>
+            <span style="color: #10b981;">3 个文件</span>
+          </div>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <div class="mock-button" style="flex:1; background: #3d3d5c; text-align: center; padding: 10px; border-radius: 8px;">重新编辑</div>
+          <div class="mock-button" style="flex:1; background: linear-gradient(135deg, #6366f1, #8b5cf6); text-align: center; padding: 10px; border-radius: 8px; color: white;">确认提交 ✓</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>关键设计决策</h3>
+  <p style="color: #aaa; margin-bottom: 12px;">每个轮次，OpenClaw 如何知道要问什么？</p>
+</div>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>完全自由对话</h3>
+      <p>用户先说需求，OpenClaw 动态理解后追问。灵活但轮次控制难，可能浪费在澄清上。</p>
+    </div>
+  </div>
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>半结构化引导</h3>
+      <p>OpenClaw 收到"创建一个视频任务"指令后，按预设的收集维度（模板→内容→素材→平台→确认）逐步追问。可控但模板化。</p>
+    </div>
+  </div>
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>混合模式</h3>
+      <p>第一轮用户自由描述需求，OpenClaw 提取缺失信息后在剩余 3 轮内定向追问。兼顾灵活和效率。</p>
+    </div>
+  </div>
+</div>
