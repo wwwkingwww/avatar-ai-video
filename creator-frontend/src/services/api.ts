@@ -1,4 +1,4 @@
-import type { ConfirmData, TaskResult, UploadedFile } from '../types';
+import type { ConfirmData, TaskResult, UploadedFile, ModelRecommendation } from '../types';
 
 const BASE = '/api/sessions';
 
@@ -13,7 +13,7 @@ export function sendMessage(
   content: string,
   attachments: string[],
   onChunk: (text: string) => void,
-  onDone: (info: { round: number; forceConfirm: boolean }) => void,
+  onDone: (info: { round: number; forceConfirm: boolean; context?: Record<string, unknown> }) => void,
   onError: (err: string) => void
 ): AbortController {
   const controller = new AbortController();
@@ -52,7 +52,7 @@ export function sendMessage(
               if (data.type === 'chunk') {
                 onChunk(data.content);
               } else if (data.type === 'done') {
-                onDone({ round: data.round, forceConfirm: data.forceConfirm });
+                onDone({ round: data.round, forceConfirm: data.forceConfirm, context: data.context || {} });
               } else if (data.type === 'error') {
                 onError(data.content);
               }
@@ -89,10 +89,37 @@ export async function getConfirmData(sessionId: string): Promise<ConfirmData> {
   return { items: data.items, missing: data.missing };
 }
 
-export async function submitTask(sessionId: string): Promise<TaskResult> {
-  const res = await fetch(`${BASE}/${sessionId}/submit`, { method: 'POST' });
+export async function submitTask(sessionId: string, scheduledAt?: string | null): Promise<TaskResult> {
+  const res = await fetch(`${BASE}/${sessionId}/submit`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ scheduledAt: scheduledAt || null }),
+  });
   if (!res.ok) throw new Error('提交失败');
   const data = await res.json();
   if (!data.success) throw new Error(data.error);
-  return { taskId: data.taskId, estimatedMinutes: data.estimatedMinutes };
+  return {
+    taskId: data.taskId,
+    status: data.status || 'GENERATING',
+    videoUrl: data.videoUrl || undefined,
+    estimatedMinutes: data.estimatedMinutes || 20,
+    jobId: data.jobId || undefined,
+  };
+}
+
+export async function getCapabilities(): Promise<{
+  taskTypes: string[];
+  models: ModelRecommendation[];
+}> {
+  const res = await fetch('/api/capabilities');
+  if (!res.ok) throw new Error('获取能力列表失败');
+  const data = await res.json();
+  return { taskTypes: data.taskTypes || [], models: data.models || [] };
+}
+
+export async function getModelSchema(endpoint: string): Promise<ModelRecommendation> {
+  const res = await fetch(`/api/capabilities/models/${encodeURIComponent(endpoint)}/schema`);
+  if (!res.ok) throw new Error('获取模型参数失败');
+  const data = await res.json();
+  return data.schema;
 }

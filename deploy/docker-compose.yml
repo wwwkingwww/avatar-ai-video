@@ -38,10 +38,12 @@ services:
       MINIO_ENDPOINT: http://minio:9000
       MINIO_BUCKET: avatar-videos
       OPENAI_API_KEY: ${OPENAI_API_KEY:-sk-placeholder}
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
     volumes:
       - ../skills:/opt/openclaw/skills:ro
       - ../shared:/opt/openclaw/shared:ro
       - ../templates:/opt/openclaw/templates:ro
+      - openclaw_data:/home/node/.openclaw
     depends_on:
       - mosquitto
       - redis
@@ -56,7 +58,9 @@ services:
     environment:
       REDIS_URL: redis://redis:6379
       OPENCLAW_URL: http://openclaw:18789
-      OPENCLAW_TOKEN: ${OPENCLAW_TOKEN:-45664d47b15ca052dcdf572f2c311a6e9a31251192ac49ad}
+      OPENCLAW_TOKEN: ${OPENCLAW_TOKEN:-}
+      DEEPSEEK_KEY: ${DEEPSEEK_KEY:-sk-placeholder}
+      MQTT_BROKER: mqtt://mosquitto:1883
       MINIO_ENDPOINT: http://minio:9000
       MINIO_BUCKET: creator-uploads
       MINIO_ACCESS_KEY: avatar
@@ -69,3 +73,4 @@ services:
 volumes:
   redis_data:
   minio_data:
+  openclaw_data:

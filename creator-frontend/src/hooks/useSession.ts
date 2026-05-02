@@ -1,6 +1,8 @@
 import { useState, useCallback, useRef } from 'react';
-import type { Message, SessionState, UploadedFile, TaskResult } from '../types';
-import { createSession, uploadFile, getConfirmData, submitTask } from '../services/api';
+import type { Message, SessionState, UploadedFile, TaskResult, ModelRecommendation } from '../types';
+import { createSession, uploadFile, getConfirmData, submitTask, getCapabilities } from '../services/api';
+import { stripOptions, buildOptions } from '../services/parseOptions';
+import { TASK_TYPE_IDS, taskTypeInfo } from '../services/videoConfig';
 import { useSSE } from './useSSE';
 
 let msgIdCounter = 0;
@@ -21,18 +23,36 @@ export function useSession() {
   const [state, setState] = useState<SessionState>(initialState);
   const [streamingText, setStreamingText] = useState('');
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
+  const [recommendations, setRecommendations] = useState<ModelRecommendation[]>([]);
   const pendingAttachments = useRef<string[]>([]);
+  const lastContext = useRef<Record<string, unknown>>({});
   const sse = useSSE();
+
+  function inferTag(content: string, ctx: Record<string, unknown>): string {
+    const phase = (ctx.phase as string) || 'INTENT'
+    if (phase === 'INTENT') {
+      const match = TASK_TYPE_IDS.find(id => taskTypeInfo(id).label === content)
+      if (match) return content
+    }
+    return content
+  }
 
   const initSession = useCallback(async () => {
     setState(initialState);
     setStreamingText('');
     setUploadedFiles([]);
+    setRecommendations([]);
     try {
       const { sessionId, message, round } = await createSession();
+      const content = stripOptions(message)
+      const msg: Message = {
+        id: nextId(), role: 'assistant' as const, content,
+        options: buildOptions({ phase: 'INTENT' }, round, 4),
+        timestamp: Date.now(),
+      }
       setState((prev) => ({
         ...prev, sessionId, round,
-        messages: [{ id: nextId(), role: 'assistant', content: message, timestamp: Date.now() }],
+        messages: [msg],
       }));
     } catch (e) {
       const msg = e instanceof Error ? e.message : '未知错误';
@@ -64,17 +84,37 @@ export function useSession() {
     const attachments = [...pendingAttachments.current];
     pendingAttachments.current = [];
 
-    const userMsg: Message = { id: nextId(), role: 'user', content: content || '已上传文件', timestamp: Date.now() };
+    const taggedContent = inferTag(content, lastContext.current)
+
+    const userMsg: Message = { id: nextId(), role: 'user', content: taggedContent, timestamp: Date.now() };
     setState((prev) => ({ ...prev, isStreaming: true, messages: [...prev.messages, userMsg] }));
     setStreamingText('');
 
-    sse.connect(state.sessionId, content, attachments, {
+    sse.connect(state.sessionId, taggedContent, attachments, {
       onChunk: (text) => { setStreamingText((prev) => prev + text); },
-      onDone: (info) => {
+      onDone: async (info) => {
         setStreamingText((prev) => {
+          const c = stripOptions(prev || '')
+          const ctx = info.context || {}
+          lastContext.current = ctx
+          const options = buildOptions(ctx, info.round, 4)
+
+          if (ctx.phase === 'RECOMMEND' || c.includes('推荐')) {
+            getCapabilities().then(caps => {
+              setRecommendations(caps.models.slice(0, 3))
+            }).catch(() => {})
+          }
+
+          const msg: Message = {
+            id: nextId(),
+            role: 'assistant' as const,
+            content: c,
+            options: options.length > 0 ? options : undefined,
+            timestamp: Date.now(),
+          }
           setState((s) => ({
             ...s, isStreaming: false, round: info.round, forceConfirm: info.forceConfirm,
-            messages: [...s.messages, { id: nextId(), role: 'assistant' as const, content: prev, timestamp: Date.now() }],
+            messages: [...s.messages, msg],
             status: info.forceConfirm ? 'confirming' : 'chatting',
           }));
           return '';
@@ -102,10 +142,10 @@ export function useSession() {
     }
   }, [state.sessionId]);
 
-  const handleSubmit = useCallback(async (): Promise<TaskResult | null> => {
+  const handleSubmit = useCallback(async (scheduledAt?: string | null): Promise<TaskResult | null> => {
     if (!state.sessionId) return null;
     try {
-      const result = await submitTask(state.sessionId);
+      const result = await submitTask(state.sessionId, scheduledAt);
       setState((prev) => ({ ...prev, status: 'submitted' }));
       return result;
     } catch (e) {
@@ -115,5 +155,5 @@ export function useSession() {
     }
   }, [state.sessionId]);
 
-  return { state, streamingText, uploadedFiles, initSession, sendUserMessage, handleFileUpload, goToConfirm, handleSubmit, backToChat };
+  return { state, streamingText, uploadedFiles, recommendations, initSession, sendUserMessage, handleFileUpload, goToConfirm, handleSubmit, backToChat };
 }

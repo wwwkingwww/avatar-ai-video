@@ -1,0 +1,46 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model VideoTask {
+  id           String     @id @default(cuid())
+  userId       String     @default("anonymous")
+  platform     String     @default("")
+  template     String     @default("")
+  script       String     @default("")
+  tags         String[]   @default([])
+  status       TaskStatus @default(DRAFT)
+  scheduledAt  DateTime?
+  videoUrl     String?
+  thumbnailUrl String?
+  rhTaskId     String?
+  publishResult Json?
+  error        String?
+  retryCount   Int        @default(0)
+  rhApiVersion String?
+  rhOutputs    Json?
+  modelEndpoint String?
+  modelParams  Json?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@index([scheduledAt])
+  @@index([status])
+  @@index([userId])
+}
+
+enum TaskStatus {
+  DRAFT
+  GENERATING
+  GENERATED
+  SCHEDULED
+  PUBLISHING
+  PUBLISHED
+  FAILED
+  CANCELLED
+}
