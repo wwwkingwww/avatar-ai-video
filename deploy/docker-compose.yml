@@ -72,7 +72,7 @@ services:
       OPENCLAW_TOKEN: ${OPENCLAW_TOKEN:-}
       DEEPSEEK_KEY: ${DEEPSEEK_KEY:-sk-placeholder}
       RH_API_KEY: ${RH_API_KEY:-}
-      RH_API_BASE_URL: https://www.runninghub.cn
+      RH_API_BASE_URL: https://www.runninghub.cn/openapi/v2
       MQTT_BROKER: mqtt://mosquitto:1883
       MINIO_ENDPOINT: http://minio:9000
       MINIO_BUCKET: creator-uploads
@@ -92,7 +92,7 @@ services:
     environment:
       REDIS_URL: redis://redis:6379
       RH_API_KEY: ${RH_API_KEY:-}
-      RH_API_BASE_URL: https://www.runninghub.cn
+      RH_API_BASE_URL: https://www.runninghub.cn/openapi/v2
       DATABASE_URL: postgresql://avatar:avatar123@postgres:5432/avatar_video
     command: node workers/generation-worker.js
     depends_on:
