@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { withSession, requireStatus } from '../middleware/round-guard.js';
 import { incrementRound, updateSession } from '../services/session-manager.js';
-import { sendToOpenClaw } from '../services/openclaw-proxy.js';
+import { sendToAI, updateContextFromUser } from '../services/ai-proxy.js';
 
 export const messagesRouter = Router();
 
@@ -14,6 +14,9 @@ messagesRouter.post('/:id/messages', withSession(), requireStatus('chatting'), a
   const { round, forceConfirm } = await incrementRound(session);
   session.round = round;
   session.forceConfirm = forceConfirm;
+
+  const newContext = updateContextFromUser(content, session.context || {});
+  await updateSession(session.id, { context: newContext });
 
   let userContent = content || '';
   if (attachments && attachments.length > 0) {
@@ -35,7 +38,7 @@ messagesRouter.post('/:id/messages', withSession(), requireStatus('chatting'), a
 
   let fullResponse = '';
   try {
-    const stream = await sendToOpenClaw(history, session);
+    const stream = await sendToAI(history, session);
     const reader = stream.getReader();
     const decoder = new TextDecoder();
     let buffer = '';
@@ -64,6 +67,6 @@ messagesRouter.post('/:id/messages', withSession(), requireStatus('chatting'), a
 
   if (fullResponse) history.push({ role: 'assistant', content: fullResponse });
   await updateSession(session.id, { history });
-  res.write(`data: ${JSON.stringify({ type: 'done', content: fullResponse, round, forceConfirm })}\n\n`);
+  res.write(`data: ${JSON.stringify({ type: 'done', content: fullResponse, round, forceConfirm, context: newContext })}\n\n`);
   res.end();
 });

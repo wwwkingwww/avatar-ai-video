@@ -85,6 +85,20 @@ services:
       - minio
       - postgres
 
+  creator-worker:
+    build:
+      context: ..
+      dockerfile: creator-api/Dockerfile
+    environment:
+      REDIS_URL: redis://redis:6379
+      RH_API_KEY: ${RH_API_KEY:-}
+      RH_API_BASE_URL: https://www.runninghub.cn
+      DATABASE_URL: postgresql://avatar:avatar123@postgres:5432/avatar_video
+    command: node workers/generation-worker.js
+    depends_on:
+      - redis
+      - postgres
+
 volumes:
   redis_data:
   minio_data:

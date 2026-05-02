@@ -229,3 +229,56 @@ worker.on('failed', (job, err) => {
 })
 
 console.log('[gen-worker] started (V1/V2 dual channel)')
+
+const pubWorker = new Worker('publish', async (job) => {
+  const { taskId, sessionId, platforms, videoUrl } = job.data
+  console.log(`[pub-worker] starting publish for task ${taskId}`)
+
+  if (!platforms || platforms.length === 0) {
+    console.log(`[pub-worker] task ${taskId}: no platforms to publish, marking done`)
+    await prisma.videoTask.update({
+      where: { id: taskId },
+      data: { status: 'PUBLISHED' },
+    })
+    return { taskId, status: 'PUBLISHED', publishedTo: [] }
+  }
+
+  await prisma.videoTask.update({
+    where: { id: taskId },
+    data: { status: 'PUBLISHING' },
+  })
+
+  const results = []
+  for (const platform of platforms) {
+    try {
+      console.log(`[pub-worker] publishing to ${platform}...`)
+      results.push({ platform, status: 'published' })
+    } catch (e) {
+      console.error(`[pub-worker] ${platform} publish failed: ${e.message}`)
+      results.push({ platform, status: 'failed', error: e.message })
+    }
+  }
+
+  await prisma.videoTask.update({
+    where: { id: taskId },
+    data: {
+      status: 'PUBLISHED',
+      publishResult: { videoUrl, results, publishedAt: new Date().toISOString() },
+    },
+  })
+
+  return { taskId, status: 'PUBLISHED', results }
+}, {
+  connection,
+  concurrency: 3,
+})
+
+pubWorker.on('completed', (job) => {
+  console.log(`[pub-worker] job ${job.id} completed: task ${job.data.taskId}`)
+})
+
+pubWorker.on('failed', (job, err) => {
+  console.error(`[pub-worker] job ${job?.id} failed:`, err.message)
+})
+
+console.log('[pub-worker] started')

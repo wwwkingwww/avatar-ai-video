@@ -16,9 +16,23 @@ sessionsRouter.post('/', async (_req, res) => {
 sessionsRouter.get('/:id/confirm', withSession(), async (req, res) => {
   try {
     const s = req.session;
-    const requiredFields = ['template', 'content', 'platforms'];
-    const missing = requiredFields.filter((f) => !s.context[f]);
-    res.json({ success: true, items: { ...s.context, files: s.files }, missing, round: s.round });
+    const ctx = s.context || {};
+    const phase = ctx.phase || 'INTENT';
+    const intent = ctx.intent || {};
+
+    let missing = [];
+    if (phase === 'INTENT') missing = ['taskType'];
+    else if (phase === 'PARAMS') {
+      if (!intent.script) missing.push('script');
+      if (!intent.preferredDuration) missing.push('duration');
+      if (!ctx.platforms?.length) missing.push('platforms');
+    }
+    res.json({
+      success: true,
+      items: { phase, intent, platforms: ctx.platforms, files: s.files, selectedModel: ctx.selectedModel },
+      missing,
+      round: s.round,
+    });
   } catch (e) {
     res.status(500).json({ success: false, error: e.message });
   }
