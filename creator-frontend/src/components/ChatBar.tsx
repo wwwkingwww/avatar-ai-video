@@ -1,7 +1,7 @@
 import { useState, useCallback, KeyboardEvent } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { QUICK_TAGS } from './ChatDialog'
+import { TASK_TYPE_IDS, taskTypeInfo } from '../services/videoConfig'
 
 interface ChatBarProps {
   onSend: (text: string) => void
@@ -31,14 +31,14 @@ export function ChatBar({ onSend, onExpand, isStreaming }: ChatBarProps) {
         💬 AI 创作
       </span>
       <div className="hidden lg:flex gap-1 shrink-0">
-        {QUICK_TAGS.slice(0, 4).map((tag) => (
+        {TASK_TYPE_IDS.map((id) => (
           <button
-            key={tag.label}
-            onClick={() => onSend(tag.text)}
+            key={id}
+            onClick={() => onSend(taskTypeInfo(id).label)}
             disabled={isStreaming}
             className="px-2 py-0.5 rounded text-[10px] border text-muted-foreground hover:text-foreground hover:border-primary transition-colors"
           >
-            {tag.label}
+            {taskTypeInfo(id).label}
           </button>
         ))}
       </div>
