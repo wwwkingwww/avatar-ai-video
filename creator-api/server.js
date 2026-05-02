@@ -5,10 +5,6 @@ import { sessionsRouter } from './routes/sessions.js';
 import { messagesRouter } from './routes/messages.js';
 import { uploadRouter } from './routes/upload.js';
 import { submitRouter } from './routes/submit.js';
-import { tasksRouter } from './routes/tasks.js';
-import { queueRouter } from './routes/queue.js';
-import { taskSubmitRouter } from './routes/task-submit.js';
-import { statsRouter } from './routes/stats.js';
 import { capabilitiesRouter } from './routes/capabilities.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -62,10 +58,6 @@ app.use('/api/sessions', sessionsRouter);
 app.use('/api/sessions', messagesRouter);
 app.use('/api/sessions', uploadRouter);
 app.use('/api/sessions', submitRouter);
-app.use('/api/tasks', tasksRouter);
-app.use('/api/tasks', taskSubmitRouter);
-app.use('/api/queues', queueRouter);
-app.use('/api/stats', statsRouter);
 app.use('/api/capabilities', capabilitiesRouter);
 
 app.use('/phone-files', express.static(join(__dirname, 'phone-agent')));
