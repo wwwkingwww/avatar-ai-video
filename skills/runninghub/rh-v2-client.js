@@ -8,9 +8,15 @@ export class RHV2Client {
   }
 
   _headers(contentType = 'application/json') {
-    const h = { Authorization: `Bearer ${this.apiKey}` };
+    const h = {
+      'Host': 'www.runninghub.cn',
+    };
     if (contentType) h['Content-Type'] = contentType;
     return h;
+  }
+
+  _authBody(extra = {}) {
+    return { apiKey: this.apiKey, ...extra };
   }
 
   async _request(method, path, opts = {}) {
@@ -18,7 +24,12 @@ export class RHV2Client {
 
     const url = `${this.baseUrl}${path}`;
     const fetchOpts = { method, headers: this._headers(isFormData ? undefined : 'application/json') };
-    if (body) fetchOpts.body = isFormData ? body : JSON.stringify(body);
+
+    if (body) {
+      fetchOpts.body = isFormData ? body : JSON.stringify(body);
+    } else if (method !== 'GET' && !isFormData) {
+      fetchOpts.body = JSON.stringify(this._authBody());
+    }
 
     const res = await fetch(url, fetchOpts);
 
@@ -39,6 +50,7 @@ export class RHV2Client {
     const blob = new Blob([fileBuffer]);
     formData.append('file', blob, fileName);
     formData.append('fileType', fileType);
+    formData.append('apiKey', this.apiKey);
 
     const data = await this._request('POST', '/task/openapi/upload', {
       body: formData,
@@ -48,7 +60,7 @@ export class RHV2Client {
   }
 
   async getNodes(webappId) {
-    const res = await fetch(`${this.baseUrl}/api/webapp/apiCallDemo?webappId=${webappId}`, {
+    const res = await fetch(`${this.baseUrl}/api/webapp/apiCallDemo?webappId=${webappId}&apiKey=${this.apiKey}`, {
       headers: this._headers(),
     });
     if (!res.ok) {
@@ -73,7 +85,7 @@ export class RHV2Client {
   }
 
   async queryOutputs(taskId) {
-    const body = { taskId };
+    const body = this._authBody({ taskId });
     const data = await this._request('POST', '/task/openapi/outputs', { body });
     return {
       status: data.data?.taskStatus || data.data?.status,
