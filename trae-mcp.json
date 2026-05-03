@@ -1,0 +1,17 @@
+﻿{
+  "mcpServers": {
+    "code-review-graph": {
+      "command": "code-review-graph",
+      "args": ["serve"],
+      "type": "stdio"
+    },
+    "project-knowledge": {
+      "command": "node",
+      "args": [
+        "E:/cusorspace/avatar-ai-video/skills/project-knowledge/index.js",
+        "serve"
+      ],
+      "type": "stdio"
+    }
+  }
+}

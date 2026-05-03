@@ -20,7 +20,7 @@ const FILTER_TABS = [
 ] as const
 
 export default function App() {
-  const { state, streamingText, recommendations, initSession, ensureSession, sendUserMessage, goToConfirm, handleSubmit, backToChat } = useSession()
+  const { state, streamingText, recommendations, initSession, ensureSession, sendUserMessage, handleSubmit, backToChat } = useSession()
   const [result, setResult] = useState<TaskResult | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [confirmOpen, setConfirmOpen] = useState(false)
@@ -35,7 +35,7 @@ export default function App() {
       const res = await fetch('/api/tasks')
       const data = await res.json()
       if (data.success) setProjects(data.data)
-    } catch {} finally { setLoading(false) }
+    } catch { /* ignore fetch error */ } finally { setLoading(false) }
   }, [])
 
   useEffect(() => { fetchProjects(); const i = setInterval(fetchProjects, 8000); return () => clearInterval(i) }, [fetchProjects])
@@ -63,7 +63,7 @@ export default function App() {
     setDialogOpen(true);
     (async () => {
       setInitLoading(true);
-      try { await ensureSession(); } catch {}
+      try { await ensureSession(); } catch { /* ignore */ }
       setInitLoading(false);
     })();
   }, [ensureSession]);
@@ -71,7 +71,7 @@ export default function App() {
   const handleQuickSend = useCallback(async (text: string) => {
     setDialogOpen(true);
     setInitLoading(true);
-    try { await ensureSession(); } catch {}
+    try { await ensureSession(); } catch { /* ignore */ }
     setInitLoading(false);
     await sendUserMessage(text);
   }, [ensureSession, sendUserMessage]);
@@ -90,7 +90,7 @@ export default function App() {
     setResult(null)
     setResultOpen(false)
     setDialogOpen(false)
-    try { await initSession(); } catch {}
+    try { await initSession(); } catch { /* ignore */ }
   }, [initSession])
 
   return (

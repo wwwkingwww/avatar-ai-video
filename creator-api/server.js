@@ -9,7 +9,7 @@ import { capabilitiesRouter } from './routes/capabilities.js';
 import { tasksRouter } from './routes/tasks.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const rootDir = join(__dirname, '..');
+const debugLog = (...args) => { if (process.env.DEBUG) console.log(...args); }; // eslint-disable-line no-console
 const app = express();
 const PORT = process.env.PORT || 3099;
 
@@ -43,7 +43,7 @@ app.get('/health', async (_req, res) => {
       const prisma = (await import('./prisma/client.js')).default;
       await prisma.$queryRaw`SELECT 1`;
       pgOk = true;
-    } catch {}
+    } catch { /* ignore prisma connection failure */ }
 
     res.json({
       status: 'ok',
@@ -69,5 +69,5 @@ app.get('*', (_req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`[creator-api] running on http://0.0.0.0:${PORT}`);
+  debugLog(`[creator-api] running on http://0.0.0.0:${PORT}`);
 });

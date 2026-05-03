@@ -1,4 +1,4 @@
-import { templateLabel, platformLabel, PLATFORMS } from '@/services/videoConfig'
+import { templateLabel, PLATFORMS } from '@/services/videoConfig'
 
 interface ChatPreviewProps {
   template: string

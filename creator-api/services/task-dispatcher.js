@@ -1,5 +1,7 @@
 import mqtt from 'mqtt';
 
+const debugLog = (...args) => { if (process.env.DEBUG) console.log(...args); }; // eslint-disable-line no-console
+
 const BROKER_URL = process.env.MQTT_BROKER || 'mqtt://mosquitto:1883';
 const TASK_TIMEOUT = 5 * 60 * 1000;
 const PLATFORMS = ['douyin', 'kuaishou', 'xiaohongshu'];
@@ -22,13 +24,13 @@ export async function dispatchTask(session) {
 
   for (const platform of platforms) {
     if (!PLATFORMS.includes(platform)) {
-      console.log(`[TaskDispatcher] 跳过不支持的平台: ${platform}`);
+      debugLog(`[TaskDispatcher] 跳过不支持的平台: ${platform}`);
       continue;
     }
 
     const phoneId = await findPhoneForPlatform(platform);
     if (!phoneId) {
-      console.log(`[TaskDispatcher] ${platform}: 没有在线的手机`);
+      debugLog(`[TaskDispatcher] ${platform}: 没有在线的手机`);
       results.push({ platform, success: false, error: '没有在线的手机' });
       continue;
     }
@@ -97,7 +99,7 @@ async function findPhoneForPlatform(platform) {
           client.end();
           resolve(phoneId);
         }
-      } catch {}
+      } catch { /* skip malformed payload */ }
     });
 
     setTimeout(() => {

@@ -1,4 +1,4 @@
-import { TASK_TYPE_IDS, taskTypeInfo, platformLabel, PHASES } from '../../shared/generation-config.js'
+import { TASK_TYPE_IDS, taskTypeInfo, platformLabel } from '../../shared/generation-config.js'
 
 const DEEPSEEK_URL = process.env.DEEPSEEK_URL || 'https://api.deepseek.com'
 const DEEPSEEK_KEY = process.env.DEEPSEEK_KEY || ''
@@ -112,22 +112,15 @@ export function updateContextFromUser(content, currentContext) {
     case 'PARAMS': {
       if (!ctx.intent) ctx.intent = {}
 
-      if (content === '上传图片') { ctx.intent.hasImage = true; return ctx }
-      if (content === '上传视频') { ctx.intent.hasVideo = true; return ctx }
-      if (content === '没有素材，纯文案生成') { ctx.intent.hasImage = false; ctx.intent.hasVideo = false; return ctx }
-
-      const durationMatch = content.match(/^(\d+)秒$/)
-      if (durationMatch) { ctx.intent.preferredDuration = parseInt(durationMatch[1]); return ctx }
-
-      if (content.match(/^\d+p$/i)) { ctx.intent.preferredQuality = content; return ctx }
-
-      if (content === 'AI帮我写文案' || content === '我自己写文案') {
-        return ctx
-      }
-
-      if (content.length > 3 && !ctx.intent.script) {
-        ctx.intent.script = content
-        return ctx
+      if (content === '上传图片') { ctx.intent.hasImage = true }
+      else if (content === '上传视频') { ctx.intent.hasVideo = true }
+      else if (content === '没有素材，纯文案生成') { ctx.intent.hasImage = false; ctx.intent.hasVideo = false }
+      else {
+        const durationMatch = content.match(/^(\d+)秒$/)
+        if (durationMatch) { ctx.intent.preferredDuration = parseInt(durationMatch[1]) }
+        else if (content.match(/^\d+p$/i)) { ctx.intent.preferredQuality = content }
+        else if (content === 'AI帮我写文案' || content === '我自己写文案') { /* no-op, just acknowledge */ }
+        else if (content.length > 3 && !ctx.intent.script) { ctx.intent.script = content }
       }
 
       const hasEnough = ctx.intent.script || ctx.intent.hasImage || ctx.intent.preferredDuration

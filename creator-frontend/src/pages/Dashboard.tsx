@@ -69,7 +69,7 @@ export function Dashboard() {
       const tasksData = await tasksRes.json()
       if (statsData.success) setStats(statsData.data)
       if (tasksData.success) setTasks(tasksData.data)
-    } catch {} finally { setLoading(false) }
+    } catch { /* ignore */ } finally { setLoading(false) }
   }, [])
 
   useEffect(() => {

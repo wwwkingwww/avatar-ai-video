@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "project-knowledge": {
+      "command": "node",
+      "args": ["skills/project-knowledge/index.js", "serve"],
+      "cwd": "${workspaceFolder}",
+      "description": "项目文档向量知识库 — 自动扫描 MD/PLAN/SPEC 文档供语义检索"
+    }
+  }
+}

@@ -4,6 +4,8 @@ import { executeActions } from './action-engine.js';
 import { downloadVideo } from './file-downloader.js';
 import { getDeviceInfo } from './adb-bridge.js';
 
+const debugLog = (...args) => { if (process.env.DEBUG) console.log(...args); }; // eslint-disable-line no-console
+
 const BROKER_URL = process.env.MQTT_BROKER || 'mqtt://127.0.0.1:1883';
 const PHONE_ID = process.env.PHONE_ID || 'phone_01';
 const PLATFORM = process.env.PLATFORM || 'douyin';
@@ -16,7 +18,7 @@ const client = mqtt.connect(BROKER_URL, {
 });
 
 client.on('connect', () => {
-  console.log(`[MQTT] connected to ${BROKER_URL} as ${PHONE_ID}`);
+  debugLog(`[MQTT] connected to ${BROKER_URL} as ${PHONE_ID}`);
 
   client.subscribe(TOPICS.TASK(PHONE_ID), { qos: 1 });
   client.subscribe(TOPICS.CMD(PHONE_ID), { qos: 1 });
@@ -61,7 +63,7 @@ async function handleTask(task) {
     return;
   }
 
-  console.log(`[TASK] ${task.task_id} - ${task.platform}`);
+  debugLog(`[TASK] ${task.task_id} - ${task.platform}`);
 
   publishStatus(task.task_id, TASK_STATUS.DOWNLOADING, { step: 'download' });
   try {
@@ -75,7 +77,7 @@ async function handleTask(task) {
       step: 'done',
       screenshots: result.screenshots,
     });
-    console.log(`[TASK] ${task.task_id} - 发布成功`);
+    debugLog(`[TASK] ${task.task_id} - 发布成功`);
   } catch (e) {
     publishStatus(task.task_id, TASK_STATUS.FAILED, {
       step: 'error',
@@ -86,7 +88,7 @@ async function handleTask(task) {
 }
 
 async function handleCommand(cmd) {
-  console.log(`[CMD] ${cmd.type}`);
+  debugLog(`[CMD] ${cmd.type}`);
   if (cmd.type === 'restart') {
     process.exit(0);
   }

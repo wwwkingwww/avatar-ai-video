@@ -1,0 +1,62 @@
+name: Avatar AI Video — Verify Gate
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  verify:
+    name: Verification Gate
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install root dependencies
+        run: npm ci
+        working-directory: .
+
+      - name: Install creator-frontend dependencies
+        run: npm ci
+        working-directory: creator-frontend
+
+      - name: Install creator-api dependencies
+        run: npm ci
+        working-directory: creator-api
+
+      - name: Install shared dependencies
+        run: npm ci
+        working-directory: shared
+
+      - name: Install phone-agent dependencies
+        run: npm ci
+        working-directory: phone-agent
+
+      - name: Run Verification Gate
+        run: node scripts/verify-gate.cjs
+        working-directory: .
+
+      - name: Upload verification report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: verify-report
+          path: logs/verify-report.json
+          retention-days: 7
+
+      - name: Report failure
+        if: failure()
+        run: |
+          echo "## ❌ Verification Gate Failed" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          cat logs/verify-report.json >> $GITHUB_STEP_SUMMARY 2>/dev/null || echo "No report generated" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY

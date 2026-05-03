@@ -1,0 +1,11 @@
+{
+  "name": "project-knowledge",
+  "version": "1.0.0",
+  "description": "项目文档向量索引：自动扫描 MD/PLAN/SPEC 文档，建立语义知识库，支持自然语言检索",
+  "entry": "index.js",
+  "commands": {
+    "scan": { "description": "扫描项目所有 .md 文档并建立向量索引" },
+    "query": { "description": "自然语言查询知识库，返回相关文档片段" },
+    "serve": { "description": "启动 MCP Server，在 IDE 中通过 @project-knowledge 查询" }
+  }
+}

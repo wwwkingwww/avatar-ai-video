@@ -66,3 +66,30 @@ export interface TaskResult {
   estimatedMinutes: number;
   jobId?: string;
 }
+
+export type TaskStatus =
+  | 'SUBMITTED'
+  | 'SCHEDULED'
+  | 'GENERATING'
+  | 'GENERATED'
+  | 'PUBLISHING'
+  | 'PUBLISHED'
+  | 'PUBLISH_FAILED'
+  | 'FAILED'
+
+export interface TaskStatusInfo {
+  id: string
+  status: TaskStatus
+  template: string
+  platform: string
+  videoUrl: string | null
+  thumbnailUrl: string | null
+  error: string | null
+  rhTaskId: string | null
+  rhApiVersion: string | null
+  publishResult: unknown
+  retryCount: number
+  createdAt: string
+  updatedAt: string
+  scheduledAt: string | null
+}

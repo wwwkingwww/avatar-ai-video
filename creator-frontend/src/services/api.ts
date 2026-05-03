@@ -1,4 +1,4 @@
-import type { ConfirmData, TaskResult, UploadedFile, ModelRecommendation } from '../types';
+import type { ConfirmData, TaskResult, TaskStatusInfo, UploadedFile, ModelRecommendation } from '../types';
 
 const BASE = '/api/sessions';
 
@@ -37,7 +37,7 @@ export function sendMessage(
       const decoder = new TextDecoder();
       let buffer = '';
 
-      while (true) {
+      while (true) { // eslint-disable-line no-constant-condition
         const { done, value } = await reader.read();
         if (done) break;
 
@@ -122,4 +122,12 @@ export async function getModelSchema(endpoint: string): Promise<ModelRecommendat
   if (!res.ok) throw new Error('获取模型参数失败');
   const data = await res.json();
   return data.schema;
+}
+
+export async function getTaskStatus(taskId: string): Promise<TaskStatusInfo> {
+  const res = await fetch(`/api/tasks/${taskId}`);
+  if (!res.ok) throw new Error('获取任务状态失败');
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error || '获取任务状态失败');
+  return data.data;
 }

@@ -1,0 +1,13 @@
+{
+  "projectName": "avatar-ai-video",
+  "languages": ["node"],
+  "sourceDirs": ["."],
+  "jsSyntaxDirs": ["creator-api", "shared", "phone-agent", "scripts", "skills"],
+  "tsPackageDirs": ["creator-frontend"],
+  "buildDirs": ["creator-frontend"],
+  "secretScanDirs": ["creator-api", "creator-frontend", "shared", "phone-agent", "scripts"],
+  "consoleLogScanDirs": ["creator-api", "creator-frontend/src", "shared", "phone-agent"],
+  "testScripts": ["scripts/full-check.cjs"],
+  "skipDirs": ["node_modules", ".git", "dist", ".next", "logs", ".trae", ".husky", "build", "output", ".browser-session"],
+  "skipFiles": [".eslintrc.cjs", ".prettierrc", "vite-env.d.ts"]
+}

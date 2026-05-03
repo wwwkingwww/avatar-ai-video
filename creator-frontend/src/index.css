@@ -33,3 +33,70 @@ body {
 #root {
   min-height: 100dvh;
 }
+
+.progress-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 16px;
+  padding: 0 16px;
+}
+
+.progress-step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+  opacity: 0.35;
+  transition: opacity 0.3s;
+}
+
+.progress-step.done {
+  opacity: 1;
+}
+
+.progress-step.active {
+  opacity: 1;
+}
+
+.progress-step.failed {
+  opacity: 1;
+}
+
+.step-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: hsl(240 15% 30%);
+  flex-shrink: 0;
+  transition: background 0.3s, box-shadow 0.3s;
+}
+
+.progress-step.done .step-dot {
+  background: hsl(150 60% 50%);
+}
+
+.progress-step.active .step-dot {
+  background: hsl(239 84% 67%);
+  box-shadow: 0 0 8px hsl(239 84% 67% / 0.5);
+  animation: pulse-dot 1.5s ease-in-out infinite;
+}
+
+.progress-step.failed .step-dot {
+  background: hsl(0 70% 55%);
+}
+
+.step-label {
+  font-size: 13px;
+  color: hsl(215 20.2% 65.1%);
+}
+
+.progress-step.done .step-label,
+.progress-step.active .step-label {
+  color: hsl(210 40% 98%);
+}
+
+@keyframes pulse-dot {
+  0%, 100% { box-shadow: 0 0 4px hsl(239 84% 67% / 0.3); }
+  50% { box-shadow: 0 0 12px hsl(239 84% 67% / 0.7); }
+}

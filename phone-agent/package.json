@@ -3,7 +3,14 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
+  "scripts": {
+    "lint": "eslint . --ext .js,.cjs",
+    "lint:fix": "eslint . --ext .js,.cjs --fix"
+  },
   "dependencies": {
     "mqtt": "^5.10.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.57.0"
   }
 }

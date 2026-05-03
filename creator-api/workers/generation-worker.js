@@ -2,7 +2,11 @@ import { Worker, Queue } from 'bullmq'
 import { readFileSync, existsSync } from 'fs'
 import prisma from '../prisma/client.js'
 import { getSession } from '../services/session-manager.js'
-import { RHV2Client, extractOutputs } from '../../skills/runninghub/rh-v2-client.js'
+import { dispatchTask } from '../services/task-dispatcher.js'
+import { uploadFromUrl } from '../services/minio-uploader.js'
+import { RHV2Client } from '../../skills/runninghub/rh-v2-client.js'
+
+const debugLog = (...args) => { if (process.env.DEBUG) console.log(...args); }; // eslint-disable-line no-console
 
 const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379'
 const u = new URL(REDIS_URL)
@@ -42,9 +46,9 @@ async function generateViaV2(task, session) {
 
   const payload = buildV2Payload(ctx.selectedModel, localFiles)
 
-  console.log(`[gen-worker] V2 submitting to ${ctx.selectedModel.endpoint}`)
+  debugLog(`[gen-worker] V2 submitting to ${ctx.selectedModel.endpoint}`)
   const result = await client.run(ctx.selectedModel.endpoint, payload, localFiles)
-  console.log(`[gen-worker] V2 task ${result.taskId} completed, outputs: ${result.outputs.length}`)
+  debugLog(`[gen-worker] V2 task ${result.taskId} completed, outputs: ${result.outputs.length}`)
 
   return {
     videoUrl: result.outputs[0],
@@ -127,24 +131,24 @@ async function pollRunningHubV1(rhTaskId) {
     if (status === 'failed' || status === 'error') {
       throw new Error(`RunningHub V1 任务失败: ${data.error || data.message || status}`)
     }
-    console.log(`[gen-worker] V1 task ${rhTaskId} status: ${status}, polling...`)
+    debugLog(`[gen-worker] V1 task ${rhTaskId} status: ${status}, polling...`);
   }
   throw new Error(`RunningHub V1 任务超时 (${GEN_POLL_TIMEOUT / 60000}min)`)
 }
 
 async function generatePlaceholderVideo(task, session) {
-  console.log(`[gen-worker] 使用占位视频 (无 API 配置)`)
+  debugLog(`[gen-worker] 使用占位视频 (无 API 配置)`);
   const ctx = session?.context || {}
   const tt = ctx.intent?.taskType || task.template || 'default'
   return `https://placeholder.video/avatar-ai/${tt}_${task.id}.mp4`
 }
 
-const genQueue = new Queue('generation', { connection })
+
 const pubQueue = new Queue('publish', { connection })
 
 const worker = new Worker('generation', async (job) => {
   const { taskId, sessionId } = job.data
-  console.log(`[gen-worker] starting job for task ${taskId}`)
+  debugLog(`[gen-worker] starting job for task ${taskId}`);
 
   await prisma.videoTask.update({
     where: { id: taskId },
@@ -166,15 +170,15 @@ const worker = new Worker('generation', async (job) => {
         videoUrl = v2Result.videoUrl
         rhTaskId = v2Result.rhTaskId
         rhOutputs = v2Result.rawResponse
-        console.log(`[gen-worker] V2 video generated: ${videoUrl}`)
+        debugLog(`[gen-worker] V2 video generated: ${videoUrl}`)
       } catch (e) {
         console.warn(`[gen-worker] V2 生成失败: ${e.message}, 尝试 V1 回退...`)
         if (RH_COOKIE) {
           try {
             rhTaskId = await submitToRunningHubV1(task, session)
-            console.log(`[gen-worker] V1 fallback task: ${rhTaskId}`)
+            debugLog(`[gen-worker] V1 fallback task: ${rhTaskId}`)
             videoUrl = await pollRunningHubV1(rhTaskId)
-            console.log(`[gen-worker] V1 video generated: ${videoUrl}`)
+            debugLog(`[gen-worker] V1 video generated: ${videoUrl}`)
           } catch (e2) {
             console.warn(`[gen-worker] V1 也失败: ${e2.message}`)
             videoUrl = await generatePlaceholderVideo(task, session)
@@ -186,15 +190,27 @@ const worker = new Worker('generation', async (job) => {
     } else if (RH_COOKIE) {
       try {
         rhTaskId = await submitToRunningHubV1(task, session)
-        console.log(`[gen-worker] V1 task: ${rhTaskId}`)
+        debugLog(`[gen-worker] V1 task: ${rhTaskId}`)
         videoUrl = await pollRunningHubV1(rhTaskId)
-        console.log(`[gen-worker] V1 video generated: ${videoUrl}`)
+        debugLog(`[gen-worker] V1 video generated: ${videoUrl}`)
       } catch (e) {
         console.warn(`[gen-worker] V1 生成失败: ${e.message}`)
         videoUrl = await generatePlaceholderVideo(task, session)
       }
     } else {
       videoUrl = await generatePlaceholderVideo(task, session)
+    }
+
+    let minioUrl = null
+    if (videoUrl && !videoUrl.startsWith('https://placeholder.video')) {
+      try {
+        const minioResult = await uploadFromUrl(videoUrl, 'videos')
+        minioUrl = minioResult.url
+        debugLog(`[gen-worker] video saved to MinIO: ${minioUrl}`)
+        videoUrl = minioUrl
+      } catch (e) {
+        console.warn(`[gen-worker] MinIO upload failed, using original URL: ${e.message}`)
+      }
     }
 
     await prisma.videoTask.update({
@@ -232,21 +248,21 @@ const worker = new Worker('generation', async (job) => {
 })
 
 worker.on('completed', (job) => {
-  console.log(`[gen-worker] job ${job.id} completed: ${job.data.taskId}`)
+  debugLog(`[gen-worker] job ${job.id} completed: ${job.data.taskId}`)
 })
 
 worker.on('failed', (job, err) => {
   console.error(`[gen-worker] job ${job?.id} failed:`, err.message)
 })
 
-console.log('[gen-worker] started (V1/V2 dual channel)')
+debugLog('[gen-worker] started (V1/V2 dual channel)')
 
 const pubWorker = new Worker('publish', async (job) => {
   const { taskId, sessionId, platforms, videoUrl } = job.data
-  console.log(`[pub-worker] starting publish for task ${taskId}`)
+  debugLog(`[pub-worker] starting publish for task ${taskId}`)
 
   if (!platforms || platforms.length === 0) {
-    console.log(`[pub-worker] task ${taskId}: no platforms to publish, marking done`)
+    debugLog(`[pub-worker] task ${taskId}: no platforms to publish, marking done`)
     await prisma.videoTask.update({
       where: { id: taskId },
       data: { status: 'PUBLISHED' },
@@ -259,37 +275,58 @@ const pubWorker = new Worker('publish', async (job) => {
     data: { status: 'PUBLISHING' },
   })
 
-  const results = []
-  for (const platform of platforms) {
-    try {
-      console.log(`[pub-worker] publishing to ${platform}...`)
-      results.push({ platform, status: 'published' })
-    } catch (e) {
-      console.error(`[pub-worker] ${platform} publish failed: ${e.message}`)
-      results.push({ platform, status: 'failed', error: e.message })
+  try {
+    const session = await getSession(sessionId)
+    if (!session) {
+      throw new Error(`Session ${sessionId} not found`)
     }
+
+    session.context = session.context || {}
+    session.context.videoUrl = videoUrl
+
+    const dispatchResult = await dispatchTask(session)
+    debugLog(`[pub-worker] dispatch result: ${JSON.stringify(dispatchResult.results)}`)
+
+    const hasFailure = dispatchResult.results.some(r => !r.success)
+    const finalStatus = hasFailure ? 'PUBLISH_FAILED' : 'PUBLISHED'
+
+    await prisma.videoTask.update({
+      where: { id: taskId },
+      data: {
+        status: finalStatus,
+        publishResult: {
+          videoUrl,
+          taskId: dispatchResult.taskId,
+          results: dispatchResult.results,
+          publishedAt: new Date().toISOString(),
+        },
+      },
+    })
+
+    return { taskId, status: finalStatus, results: dispatchResult.results }
+  } catch (e) {
+    console.error(`[pub-worker] dispatch failed: ${e.message}`)
+    await prisma.videoTask.update({
+      where: { id: taskId },
+      data: {
+        status: 'PUBLISH_FAILED',
+        error: e.message,
+        publishResult: { videoUrl, error: e.message, publishedAt: new Date().toISOString() },
+      },
+    })
+    throw e
   }
-
-  await prisma.videoTask.update({
-    where: { id: taskId },
-    data: {
-      status: 'PUBLISHED',
-      publishResult: { videoUrl, results, publishedAt: new Date().toISOString() },
-    },
-  })
-
-  return { taskId, status: 'PUBLISHED', results }
 }, {
   connection,
   concurrency: 3,
 })
 
 pubWorker.on('completed', (job) => {
-  console.log(`[pub-worker] job ${job.id} completed: task ${job.data.taskId}`)
+  debugLog(`[pub-worker] job ${job.id} completed: task ${job.data.taskId}`)
 })
 
 pubWorker.on('failed', (job, err) => {
   console.error(`[pub-worker] job ${job?.id} failed:`, err.message)
 })
 
-console.log('[pub-worker] started')
+debugLog('[pub-worker] started')

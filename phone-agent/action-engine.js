@@ -35,10 +35,11 @@ export async function executeActions(actions, params = {}) {
         await inputText(resolveTemplate(action.content, params));
         break;
 
-      case 'screenshot':
+      case 'screenshot': {
         const path = screenshot(resolveTemplate(action.name, params));
         if (path) screenshots.push({ name: action.name, path });
         break;
+      }
 
       case 'back':
         keyEvent('back');

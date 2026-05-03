@@ -8,6 +8,8 @@ const PHONE_IP = process.env.PHONE_IP || '100.105.213.115:5555';
 const PLATFORMS = (process.env.PLATFORMS || 'douyin,kuaishou,xiaohongshu').split(',');
 const ADB_PREFIX = `adb -s ${PHONE_IP}`;
 
+const debugLog = (...args) => { if (process.env.DEBUG) console.log(...args); }; // eslint-disable-line no-console
+
 let _connected = false;
 
 function adb(cmd) {
@@ -36,14 +38,14 @@ function ensureConnected() {
     if (r2 && r2.includes('OK')) { _connected = true; return true; }
   } catch {
     adb('connect ' + PHONE_IP.replace(':5555', ''));
-    try { adb('shell echo OK'); _connected = true; return true; } catch {}
+    try { adb('shell echo OK'); _connected = true; return true; } catch { /* ignore */ }
   }
   return false;
 }
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
-async function executeActions(actions, params) {
+async function executeActions(actions, _params) {
   const screenshots = [];
   for (const a of actions) {
     switch (a.type) {
@@ -93,7 +95,7 @@ const client = mqtt.connect(BROKER_URL, {
 });
 
 client.on('connect', () => {
-  console.log(`[bridge] MQTT connected as ${BRIDGE_ID}`);
+  debugLog(`[bridge] MQTT connected as ${BRIDGE_ID}`);
 
   client.subscribe(`phone/${BRIDGE_ID}/task`, { qos: 1 });
   client.subscribe(`phone/${BRIDGE_ID}/cmd`, { qos: 1 });
@@ -134,14 +136,14 @@ client.on('message', async (topic, payload) => {
 });
 
 async function handleTask(task) {
-  console.log(`[bridge] TASK ${task.task_id} | ${task.platform}`);
+  debugLog(`[bridge] TASK ${task.task_id} | ${task.platform}`);
   publishStatus(task.task_id, 'publishing', { step: 'exec' });
 
   try {
     ensureConnected();
     const result = await executeActions(task.actions, task.params || {});
     publishStatus(task.task_id, 'success', { step: 'done', screenshots: result.screenshots });
-    console.log(`[bridge] TASK ${task.task_id} done`);
+    debugLog(`[bridge] TASK ${task.task_id} done`);
   } catch (e) {
     publishStatus(task.task_id, 'failed', { error: e.message });
     console.error(`[bridge] TASK ${task.task_id} failed:`, e.message);
@@ -149,7 +151,7 @@ async function handleTask(task) {
 }
 
 async function handleCommand(cmd) {
-  console.log('[bridge] CMD', cmd.type);
+  debugLog('[bridge] CMD', cmd.type);
   if (cmd.type === 'restart') {
     setTimeout(() => process.exit(0), 500);
   }
@@ -178,4 +180,4 @@ client.on('error', e => console.error('[bridge] MQTT error:', e.message));
 
 process.on('SIGINT', () => { client.end(); process.exit(0); });
 
-console.log('[bridge] Server ADB Bridge started');
+debugLog('[bridge] Server ADB Bridge started');

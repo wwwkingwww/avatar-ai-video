@@ -4,12 +4,30 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "verify": "node %USERPROFILE%/.trae-cn/scripts/verify-gate.cjs",
+    "verify:fast": "node %USERPROFILE%/.trae-cn/scripts/verify-gate.cjs --fast",
+    "verify:init": "node %USERPROFILE%/.trae-cn/scripts/verify-gate.cjs --init",
+    "lint": "cd creator-api && npm run lint && cd ../creator-frontend && npm run lint && cd ../phone-agent && npm run lint && cd ../shared && npm run lint",
     "analyze": "node scripts/analyze-runninghub.js",
-    "test": "npm run test:mock",
+    "test": "cd shared && npm run test && cd ../creator-api && npm run test",
     "test:mock": "node scripts/test-e2e.js --mock",
-    "test:e2e": "node scripts/test-e2e.js"
+    "test:e2e": "node scripts/test-e2e.js",
+    "prepare": "husky"
   },
   "dependencies": {
+    "mqtt": "^5.15.1",
     "playwright": "^1.59.1"
+  },
+  "devDependencies": {
+    "husky": "^9.1.6",
+    "lint-staged": "^15.4.3"
+  },
+  "lint-staged": {
+    "*.{js,cjs,mjs,ts,tsx}": [
+      "node --check"
+    ],
+    "*.{ts,tsx}": [
+      "cd creator-frontend && npx tsc --noEmit --pretty false"
+    ]
   }
 }

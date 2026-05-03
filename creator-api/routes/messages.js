@@ -42,7 +42,7 @@ messagesRouter.post('/:id/messages', withSession(), requireStatus('chatting'), a
     const reader = stream.getReader();
     const decoder = new TextDecoder();
     let buffer = '';
-    while (true) {
+    while (true) { // eslint-disable-line no-constant-condition
       const { done, value } = await reader.read();
       if (done) break;
       buffer += decoder.decode(value, { stream: true });
