@@ -5,12 +5,15 @@
   "type": "module",
   "scripts": {
     "lint": "eslint . --ext .js,.cjs",
-    "lint:fix": "eslint . --ext .js,.cjs --fix"
+    "lint:fix": "eslint . --ext .js,.cjs --fix",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "mqtt": "^5.10.0"
   },
   "devDependencies": {
-    "eslint": "^8.57.0"
+    "eslint": "^8.57.0",
+    "vitest": "^3.1.1"
   }
 }

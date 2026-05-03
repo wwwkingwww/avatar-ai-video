@@ -62,4 +62,35 @@ export async function incrementRound(session) {
   return { round: newRound, forceConfirm };
 }
 
+export async function deleteSession(id) {
+  await redis.del(sessionKey(id));
+}
+
+export async function listSessions(limit = 20) {
+  const keys = [];
+  let cursor = '0';
+  do {
+    const result = await redis.scan(cursor, 'MATCH', 'session:*', 'COUNT', limit);
+    cursor = result[0];
+    keys.push(...result[1]);
+  } while (cursor !== '0' && keys.length < limit);
+
+  const sessions = [];
+  for (const key of keys.slice(0, limit)) {
+    const id = key.replace('session:', '');
+    const s = await getSession(id);
+    if (s) {
+      sessions.push({
+        id: s.id,
+        round: s.round,
+        status: s.status,
+        phase: s.context?.phase || 'INTENT',
+        taskType: s.context?.intent?.taskType || null,
+        createdAt: s.createdAt,
+      });
+    }
+  }
+  return sessions;
+}
+
 export { MAX_ROUNDS };

@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { withSession, requireStatus } from '../middleware/round-guard.js';
-import { updateSession } from '../services/session-manager.js';
+import { updateSession, getSession } from '../services/session-manager.js';
 import prisma from '../prisma/client.js';
 import { generationQueue } from '../services/queue.js';
 
@@ -60,5 +60,70 @@ submitRouter.post('/:id/submit', withSession(), requireStatus('chatting', 'confi
     console.error('[submit] 任务提交失败:', e.message);
     await updateSession(req.session.id, { status: 'failed' }).catch(() => {});
     res.status(500).json({ success: false, error: `任务提交失败: ${e.message}` });
+  }
+});
+
+submitRouter.post('/:id/cancel', withSession(), async (req, res) => {
+  try {
+    const session = req.session;
+    if (!session.taskId) return res.status(400).json({ success: false, error: '当前会话没有关联任务' });
+
+    const task = await prisma.videoTask.findUnique({ where: { id: session.taskId } });
+    if (!task) return res.status(404).json({ success: false, error: '任务不存在' });
+
+    const cancellable = ['DRAFT', 'SCHEDULED', 'GENERATING', 'GENERATED'];
+    if (!cancellable.includes(task.status)) {
+      return res.status(409).json({ success: false, error: `任务状态 ${task.status} 无法取消` });
+    }
+
+    try { await generationQueue.remove(`gen-${session.taskId}`); } catch { /* job may already be processed */ }
+    try { await generationQueue.remove(`pub-${session.taskId}`); } catch { /* no publish job */ }
+
+    await prisma.videoTask.update({
+      where: { id: session.taskId },
+      data: { status: 'CANCELLED' },
+    });
+    await updateSession(session.id, { status: 'cancelled', taskId: undefined });
+
+    res.json({ success: true, taskId: session.taskId, status: 'CANCELLED' });
+  } catch (e) {
+    console.error('[submit] cancel error:', e.message);
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+submitRouter.post('/:id/retry', withSession(), async (req, res) => {
+  try {
+    const session = req.session;
+    if (!session.taskId) return res.status(400).json({ success: false, error: '当前会话没有关联任务' });
+
+    const task = await prisma.videoTask.findUnique({ where: { id: session.taskId } });
+    if (!task) return res.status(404).json({ success: false, error: '任务不存在' });
+
+    if (task.retryCount >= 3) {
+      return res.status(400).json({ success: false, error: '已达到最大重试次数 (3)' });
+    }
+
+    const nextRetry = (task.retryCount || 0) + 1;
+
+    await prisma.videoTask.update({
+      where: { id: session.taskId },
+      data: { status: 'GENERATING', retryCount: nextRetry, error: null },
+    });
+    await updateSession(session.id, { status: 'generating' });
+
+    await generationQueue.add('generate', {
+      taskId: session.taskId,
+      sessionId: session.id,
+    }, {
+      jobId: `gen-${session.taskId}-retry${nextRetry}`,
+      attempts: 2,
+      backoff: { type: 'exponential', delay: 30000 },
+    });
+
+    res.json({ success: true, taskId: session.taskId, status: 'GENERATING', retryCount: nextRetry });
+  } catch (e) {
+    console.error('[submit] retry error:', e.message);
+    res.status(500).json({ success: false, error: e.message });
   }
 });

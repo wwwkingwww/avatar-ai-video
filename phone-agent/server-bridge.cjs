@@ -150,22 +150,48 @@ async function handleTask(task) {
   }
 }
 
+let currentTaskId = null
+let paused = false
+
 async function handleCommand(cmd) {
-  debugLog('[bridge] CMD', cmd.type);
-  if (cmd.type === 'restart') {
-    setTimeout(() => process.exit(0), 500);
-  }
-  if (cmd.type === 'exec') {
-    try {
-      const out = execSync(cmd.command, { encoding: 'utf8', timeout: 15000 }).trim();
+  debugLog('[bridge] CMD', cmd.type)
+  switch (cmd.type) {
+    case 'restart':
+      setTimeout(() => process.exit(0), 500)
+      break
+    case 'stop':
+      if (currentTaskId) {
+        publishStatus(currentTaskId, 'failed', { error: '用户取消' })
+        currentTaskId = null
+        debugLog('[bridge] task stopped by user')
+      }
+      break
+    case 'pause':
+      paused = true
+      debugLog('[bridge] bridge paused')
+      break
+    case 'resume':
+      paused = false
+      debugLog('[bridge] bridge resumed')
+      break
+    case 'status':
       client.publish(`phone/${BRIDGE_ID}/status`, JSON.stringify({
-        type: 'exec_result', command: cmd.command, output: out, success: true, timestamp: Date.now(),
-      }));
-    } catch (e) {
-      client.publish(`phone/${BRIDGE_ID}/status`, JSON.stringify({
-        type: 'exec_result', command: cmd.command, error: e.message, success: false, timestamp: Date.now(),
-      }));
-    }
+        type: 'cmd_result', status: paused ? 'paused' : 'online',
+        currentTask: currentTaskId, timestamp: Date.now(),
+      }))
+      break
+    case 'exec':
+      try {
+        const out = execSync(cmd.command, { encoding: 'utf8', timeout: 15000 }).trim()
+        client.publish(`phone/${BRIDGE_ID}/status`, JSON.stringify({
+          type: 'exec_result', command: cmd.command, output: out, success: true, timestamp: Date.now(),
+        }))
+      } catch (e) {
+        client.publish(`phone/${BRIDGE_ID}/status`, JSON.stringify({
+          type: 'exec_result', command: cmd.command, error: e.message, success: false, timestamp: Date.now(),
+        }))
+      }
+      break
   }
 }
 

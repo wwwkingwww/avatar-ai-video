@@ -1,12 +1,13 @@
 {
   "name": "runninghub-gen",
-  "version": "1.0.0",
-  "description": "调用 RunningHub API 生成 AI 视频",
+  "version": "2.0.0",
+  "description": "调用 RunningHub V2 API 生成 AI 视频 (Bearer Token)",
   "entry": "generate.js",
   "parameters": {
-    "prompt": { "type": "string", "required": true, "description": "视频提示词" },
-    "duration": { "type": "number", "default": 30, "description": "时长(秒)" },
-    "style": { "type": "string", "default": "tech", "description": "风格模板" },
-    "resolution": { "type": "string", "default": "1080p", "description": "分辨率" }
+    "endpoint": { "type": "string", "required": true, "description": "V2 API 模型端点路径" },
+    "payload": { "type": "object", "required": true, "description": "模型参数" },
+    "apiKey": { "type": "string", "required": false, "description": "API Key (默认取环境变量 RH_API_KEY)" },
+    "files": { "type": "object", "required": false, "description": "上传文件 {fieldKey: [{buffer, name}]}" },
+    "timeout": { "type": "number", "default": 600000, "description": "超时 (ms)" }
   }
 }

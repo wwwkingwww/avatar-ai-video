@@ -16,7 +16,7 @@ function getRouter() {
   return router
 }
 
-capabilitiesRouter.get('/', (_req, res) => {
+capabilitiesRouter.get('/', (req, res) => {
   try {
     const r = getRouter()
     if (!r) {
@@ -28,7 +28,9 @@ capabilitiesRouter.get('/', (_req, res) => {
     }
 
     const tasks = r.listCapabilities()
-    const models = r.searchModels({})
+    const { taskType } = req.query
+    const filter = taskType ? { taskType } : {}
+    const models = r.searchModels(filter)
     const summary = models.map((m) => ({
       endpoint: m.endpoint,
       name: m.name,
@@ -38,7 +40,12 @@ capabilitiesRouter.get('/', (_req, res) => {
       description: m.category,
     }))
 
-    res.json({ success: true, taskTypes: tasks, models: summary })
+    res.json({
+      success: true,
+      taskTypes: tasks,
+      models: summary,
+      filter: taskType || null,
+    })
   } catch (e) {
     console.error('[capabilities] error:', e.message)
     res.status(500).json({ success: false, error: e.message })

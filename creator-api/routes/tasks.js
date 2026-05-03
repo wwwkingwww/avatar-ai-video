@@ -55,29 +55,54 @@ tasksRouter.get('/:id', async (req, res) => {
   }
 })
 
-tasksRouter.get('/', async (_req, res) => {
+tasksRouter.get('/', async (req, res) => {
   try {
-    const tasks = await prisma.videoTask.findMany({
-      orderBy: { createdAt: 'desc' },
-      take: 50,
-      select: {
-        id: true,
-        status: true,
-        template: true,
-        script: true,
-        platform: true,
-        videoUrl: true,
-        thumbnailUrl: true,
-        scheduledAt: true,
-        createdAt: true,
-        updatedAt: true,
-        error: true,
-        modelEndpoint: true,
-      },
-    })
+    const page = Math.max(1, parseInt(req.query.page) || 1)
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 20))
+    const skip = (page - 1) * limit
+
+    const where = {}
+    if (req.query.status) {
+      const statuses = req.query.status.split(',').filter(Boolean)
+      if (statuses.length === 1) {
+        where.status = statuses[0]
+      } else if (statuses.length > 1) {
+        where.status = { in: statuses }
+      }
+    }
+    if (req.query.platform) {
+      const platforms = req.query.platform.split(',').filter(Boolean)
+      if (platforms.length === 1) {
+        where.platform = platforms[0]
+      } else if (platforms.length > 1) {
+        where.platform = { in: platforms }
+      }
+    }
+
+    const [tasks, total] = await Promise.all([
+      prisma.videoTask.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+        select: {
+          id: true, status: true, template: true, script: true,
+          platform: true, videoUrl: true, thumbnailUrl: true,
+          scheduledAt: true, createdAt: true, updatedAt: true,
+          error: true, modelEndpoint: true,
+        },
+      }),
+      prisma.videoTask.count({ where }),
+    ])
 
     res.json({
       success: true,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
       data: tasks.map((t) => ({
         id: t.id,
         status: t.status,

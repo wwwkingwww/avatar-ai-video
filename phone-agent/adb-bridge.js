@@ -52,9 +52,9 @@ export function launchApp(packageName) {
 }
 
 export function screenshot(filename) {
-  const path = `/sdcard/screenshots/${filename}.png`;
-  const result = adb(`exec-out screencap -p > ${path}`);
-  return result !== null ? path : null;
+  const devicePath = `/sdcard/screenshots/${filename}.png`;
+  const result = adb(`shell screencap -p ${devicePath}`);
+  return result !== null ? devicePath : null;
 }
 
 export function keyEvent(key) {

@@ -87,10 +87,41 @@ async function handleTask(task) {
   }
 }
 
+let currentTaskId = null
+let paused = false
+
 async function handleCommand(cmd) {
-  debugLog(`[CMD] ${cmd.type}`);
-  if (cmd.type === 'restart') {
-    process.exit(0);
+  debugLog(`[CMD] ${cmd.type}`)
+  switch (cmd.type) {
+    case 'restart':
+      process.exit(0)
+    case 'stop':
+      if (currentTaskId) {
+        publishStatus(currentTaskId, TASK_STATUS.FAILED, { error: '用户取消' })
+        currentTaskId = null
+        debugLog('[CMD] task stopped by user')
+      }
+      break
+    case 'pause':
+      paused = true
+      debugLog('[CMD] agent paused')
+      client.publish(TOPICS.STATUS(PHONE_ID), JSON.stringify({
+        phone_id: PHONE_ID, status: 'paused', timestamp: Date.now(),
+      }))
+      break
+    case 'resume':
+      paused = false
+      debugLog('[CMD] agent resumed')
+      client.publish(TOPICS.STATUS(PHONE_ID), JSON.stringify({
+        phone_id: PHONE_ID, status: 'online', timestamp: Date.now(),
+      }))
+      break
+    case 'status':
+      client.publish(TOPICS.STATUS(PHONE_ID), JSON.stringify({
+        phone_id: PHONE_ID, status: paused ? 'paused' : 'online',
+        currentTask: currentTaskId, timestamp: Date.now(),
+      }))
+      break
   }
 }
 

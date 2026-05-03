@@ -136,12 +136,6 @@ async function pollRunningHubV1(rhTaskId) {
   throw new Error(`RunningHub V1 任务超时 (${GEN_POLL_TIMEOUT / 60000}min)`)
 }
 
-async function generatePlaceholderVideo(task, session) {
-  debugLog(`[gen-worker] 使用占位视频 (无 API 配置)`);
-  const ctx = session?.context || {}
-  const tt = ctx.intent?.taskType || task.template || 'default'
-  return `https://placeholder.video/avatar-ai/${tt}_${task.id}.mp4`
-}
 
 
 const pubQueue = new Queue('publish', { connection })
@@ -174,35 +168,25 @@ const worker = new Worker('generation', async (job) => {
       } catch (e) {
         console.warn(`[gen-worker] V2 生成失败: ${e.message}, 尝试 V1 回退...`)
         if (RH_COOKIE) {
-          try {
-            rhTaskId = await submitToRunningHubV1(task, session)
-            debugLog(`[gen-worker] V1 fallback task: ${rhTaskId}`)
-            videoUrl = await pollRunningHubV1(rhTaskId)
-            debugLog(`[gen-worker] V1 video generated: ${videoUrl}`)
-          } catch (e2) {
-            console.warn(`[gen-worker] V1 也失败: ${e2.message}`)
-            videoUrl = await generatePlaceholderVideo(task, session)
-          }
+          rhTaskId = await submitToRunningHubV1(task, session)
+          debugLog(`[gen-worker] V1 fallback task: ${rhTaskId}`)
+          videoUrl = await pollRunningHubV1(rhTaskId)
+          debugLog(`[gen-worker] V1 video generated: ${videoUrl}`)
         } else {
-          videoUrl = await generatePlaceholderVideo(task, session)
+          throw new Error('V2 生成失败且未配置 RunningHub Cookie，无法回退 V1')
         }
       }
     } else if (RH_COOKIE) {
-      try {
-        rhTaskId = await submitToRunningHubV1(task, session)
-        debugLog(`[gen-worker] V1 task: ${rhTaskId}`)
-        videoUrl = await pollRunningHubV1(rhTaskId)
-        debugLog(`[gen-worker] V1 video generated: ${videoUrl}`)
-      } catch (e) {
-        console.warn(`[gen-worker] V1 生成失败: ${e.message}`)
-        videoUrl = await generatePlaceholderVideo(task, session)
-      }
+      rhTaskId = await submitToRunningHubV1(task, session)
+      debugLog(`[gen-worker] V1 task: ${rhTaskId}`)
+      videoUrl = await pollRunningHubV1(rhTaskId)
+      debugLog(`[gen-worker] V1 video generated: ${videoUrl}`)
     } else {
-      videoUrl = await generatePlaceholderVideo(task, session)
+      throw new Error('未配置任何 RunningHub API 凭据 (RH_API_KEY 或 RUNNINGHUB_COOKIE)。请在环境变量中设置 RH_API_KEY 以使用 V2 API，或设置 RUNNINGHUB_COOKIE 使用 V1')
     }
 
     let minioUrl = null
-    if (videoUrl && !videoUrl.startsWith('https://placeholder.video')) {
+    if (videoUrl) {
       try {
         const minioResult = await uploadFromUrl(videoUrl, 'videos')
         minioUrl = minioResult.url

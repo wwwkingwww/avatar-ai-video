@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { createSession, getSession } from '../services/session-manager.js';
+import { createSession, getSession, deleteSession, listSessions } from '../services/session-manager.js';
 import { withSession } from '../middleware/round-guard.js';
 
 export const sessionsRouter = Router();
@@ -8,6 +8,27 @@ sessionsRouter.post('/', async (_req, res) => {
   try {
     const sessionId = await createSession();
     res.json({ success: true, sessionId, message: '你好！今天想做什么类型的视频？', round: 1 });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+sessionsRouter.get('/', async (req, res) => {
+  try {
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 20));
+    const sessions = await listSessions(limit);
+    res.json({ success: true, data: sessions });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+sessionsRouter.delete('/:id', async (req, res) => {
+  try {
+    const s = await getSession(req.params.id);
+    if (!s) return res.status(404).json({ success: false, error: '会话不存在' });
+    await deleteSession(req.params.id);
+    res.json({ success: true });
   } catch (e) {
     res.status(500).json({ success: false, error: e.message });
   }
