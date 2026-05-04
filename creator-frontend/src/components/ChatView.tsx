@@ -8,6 +8,7 @@ import type { Message, UploadedFile } from '../types'
 
 interface ChatViewProps {
   chatBar?: React.ReactNode
+  compact?: boolean
   step: number
   messages: Message[]
   streamingText: string
@@ -22,6 +23,7 @@ interface ChatViewProps {
 
 export function ChatView({
   chatBar,
+  compact = false,
   step, messages, streamingText, isStreaming, uploadedFiles,
   context, taskId, onSend, onUpload, onNewTask,
 }: ChatViewProps) {
@@ -52,16 +54,19 @@ export function ChatView({
   )
 
   return (
-    <div className="chat-view">
+    <div className={compact ? 'chat-view-compact' : 'chat-view'}>
       <div className="chat-main">
         {chatBar}
-        <div className="lg:hidden">{sidebarContent}</div>
+        {!compact && <div className="lg:hidden">{sidebarContent}</div>}
+        {compact && <div className="lg:hidden"><PreviewPanel taskType={taskType} platforms={platforms} files={uploadedFiles} script={script} missing={missing} /></div>}
         <MessageList messages={messages} streamingText={streamingText} isStreaming={isStreaming} onOptionSelect={onSend} />
         <InputArea onSend={onSend} onUpload={onUpload} uploadedFiles={uploadedFiles} disabled={isStreaming} />
       </div>
-      <aside className="chat-sidebar">
-        {sidebarContent}
-      </aside>
+      {!compact && (
+        <aside className="chat-sidebar">
+          {sidebarContent}
+        </aside>
+      )}
     </div>
   )
 }

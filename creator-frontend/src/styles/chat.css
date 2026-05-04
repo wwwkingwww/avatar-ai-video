@@ -127,6 +127,9 @@
 /* Chat View — 响应式双栏布局 */
 .chat-view { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
 
+/* compact 模式：始终单栏，无右侧面板 */
+.chat-view-compact { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
 /* 左栏：对话流（手机全宽，桌面 60%） */
 .chat-main { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
 

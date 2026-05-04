@@ -16,7 +16,7 @@ export function ToolGrid() {
           className="flex flex-col items-center gap-1.5 rounded-lg border border-dashed border-white/5 bg-white/[0.01] py-4 px-3 opacity-60 cursor-not-allowed transition-opacity hover:opacity-80"
         >
           <span className="text-xl">{tool.icon}</span>
-          <span className="text-xs text-white/25">{tool.label}</span>
+          <span className="text-xs text-white/35">{tool.label}</span>
           <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400">
             {tool.status}
           </span>

@@ -94,13 +94,13 @@ export function PortfolioGrid({ onTemplateClick }: PortfolioGridProps) {
                 )}
                 <div className="p-3">
                   <p className="text-sm text-foreground">{work.title}</p>
-                  <p className="text-xs text-white/20">{work.platform} · {work.time}</p>
+                  <p className="text-xs text-white/35">{work.platform} · {work.time}</p>
                 </div>
               </div>
             ))}
             <div className="flex flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-white/5 bg-white/[0.01] min-h-[100px] opacity-40 hover:opacity-60 transition-opacity cursor-pointer">
               <span className="text-xl">＋</span>
-              <span className="text-xs text-white/20">创建新作品</span>
+              <span className="text-xs text-white/35">创建新作品</span>
             </div>
           </>
         )}
@@ -111,22 +111,22 @@ export function PortfolioGrid({ onTemplateClick }: PortfolioGridProps) {
               <div className="h-14 bg-gradient-to-br from-amber-500/10 to-amber-500/5 flex items-center justify-center text-lg">🏆</div>
               <div className="p-3">
                 <p className="text-sm text-foreground">{work.title}</p>
-                <p className="text-xs text-white/20">{work.author} · {work.views}</p>
+                <p className="text-xs text-white/35">{work.author} · {work.views}</p>
               </div>
             </div>
           ))}
       </div>
 
       {activeTab === 'templates' && (
-        <p className="text-center text-xs text-white/10 hover:text-white/25 cursor-pointer transition-colors">
+        <p className="text-center text-xs text-white/25 hover:text-white/45 cursor-pointer transition-colors">
           查看更多模板 →
         </p>
       )}
       {activeTab === 'my-works' && (
-        <p className="text-center text-xs text-white/10">登录后可查看全部作品</p>
+        <p className="text-center text-xs text-white/25">登录后可查看全部作品</p>
       )}
       {activeTab === 'featured' && (
-        <p className="text-center text-xs text-white/10">每周精选 · 社区投稿</p>
+        <p className="text-center text-xs text-white/25">每周精选 · 社区投稿</p>
       )}
     </div>
   )
