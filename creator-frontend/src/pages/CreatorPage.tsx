@@ -1,6 +1,7 @@
 import { useSession } from '../hooks/useSession'
 import { ChatView } from '../components/ChatView'
 import { ChatBar } from '../components/ChatBar'
+import { Link } from 'react-router-dom'
 
 export function CreatorPage() {
   const {

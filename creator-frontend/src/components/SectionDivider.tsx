@@ -1,14 +1,11 @@
-interface SectionDividerProps {
-  label: string
-  className?: string
-}
-
-export function SectionDivider({ label, className }: SectionDividerProps) {
+export function SectionDivider({ label }: { label: string }) {
   return (
-    <div className={`flex items-center gap-3 px-1 py-2 ${className || ''}`}>
-      <div className="flex-1 h-px bg-white/10" />
-      <span className="text-xs text-white/35 font-medium whitespace-nowrap">{label}</span>
-      <div className="flex-1 h-px bg-white/10" />
+    <div className="flex items-center gap-4">
+      <hr className="gold-rule flex-1" />
+      <span className="text-xs tracking-[0.2em] uppercase text-muted-foreground font-medium whitespace-nowrap">
+        {label}
+      </span>
+      <hr className="gold-rule flex-1" />
     </div>
   )
 }

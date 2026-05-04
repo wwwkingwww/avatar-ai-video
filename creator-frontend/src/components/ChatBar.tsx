@@ -20,15 +20,13 @@ export function ChatBar({ onSend, isStreaming }: ChatBarProps) {
   }, [text, isStreaming, onSend])
 
   const handleKeyDown = useCallback((e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      handleSend()
-    }
+    if (e.key === 'Enter') handleSend()
   }, [handleSend])
 
   return (
-    <div className="flex items-center gap-2.5 px-5 py-2.5 bg-card border-b shrink-0">
-      <span className="text-xs font-semibold text-primary whitespace-nowrap shrink-0">
-        💬 AI 创作
+    <div className="flex items-center gap-2.5 px-4 py-2.5 bg-card/30 border-b border-border/20 shrink-0">
+      <span className="font-display text-sm font-semibold italic text-primary whitespace-nowrap shrink-0 tracking-wide">
+        Studio
       </span>
       <div className="hidden lg:flex gap-1 shrink-0">
         {TASK_TYPE_IDS.map((id) => (
@@ -36,7 +34,7 @@ export function ChatBar({ onSend, isStreaming }: ChatBarProps) {
             key={id}
             onClick={() => onSend(taskTypeInfo(id).label)}
             disabled={isStreaming}
-            className="px-2 py-0.5 rounded text-[10px] border text-muted-foreground hover:text-foreground hover:border-primary transition-colors"
+            className="px-2.5 py-1 rounded-full text-[10px] border border-border/40 text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors font-medium"
           >
             {taskTypeInfo(id).label}
           </button>
@@ -46,18 +44,23 @@ export function ChatBar({ onSend, isStreaming }: ChatBarProps) {
         value={text}
         onChange={(e) => setText(e.target.value)}
         onKeyDown={handleKeyDown}
-        placeholder="描述你的视频创意，直接发送开始创作..."
+        placeholder="Describe your video idea..."
         disabled={isStreaming}
-        className="flex-1 h-8 text-xs"
+        className="flex-1 h-8 text-xs font-sans placeholder:text-muted-foreground/50"
       />
-      <Button size="xs" onClick={handleSend} disabled={isStreaming || !text.trim()} className="shrink-0 whitespace-nowrap">
-        ➤ 快速创建
+      <Button
+        size="xs"
+        onClick={handleSend}
+        disabled={isStreaming || !text.trim()}
+        className="shrink-0 whitespace-nowrap rounded-full px-3.5 text-xs font-semibold"
+      >
+        Create
       </Button>
       <Link
         to="/dashboard"
-        className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-xs font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-8 px-3 shrink-0"
+        className="hidden sm:inline-flex shrink-0 text-[10px] text-muted-foreground hover:text-foreground transition-colors px-2 py-1 rounded border border-border/20 hover:border-border/50"
       >
-        ⛶ 管理后台
+        Dashboard
       </Link>
     </div>
   )
