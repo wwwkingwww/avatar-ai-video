@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
 import { DashboardShell } from '@/components/layout/DashboardShell'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { Header } from '@/components/layout/Header'
@@ -52,7 +53,14 @@ const navTitleMap: Record<string, { title: string; description: string }> = {
 }
 
 export function Dashboard() {
-  const [activeView, setActiveView] = useState('dashboard')
+  const { view } = useParams<{ view?: string }>()
+  const navigate = useNavigate()
+  const activeView = view || 'dashboard'
+
+  const handleNavigate = useCallback((v: string) => {
+    navigate(v === 'dashboard' ? '/dashboard' : `/dashboard/${v}`)
+  }, [navigate])
+
   const currentNav = navTitleMap[activeView] || navTitleMap.dashboard
 
   const [stats, setStats] = useState<DashboardStats>({ total: 0, generated: 0, published: 0, queued: 0, failed: 0 })
@@ -82,7 +90,7 @@ export function Dashboard() {
 
   return (
     <DashboardShell>
-      <Sidebar activeView={activeView} onNavigate={setActiveView} />
+      <Sidebar onNavigate={handleNavigate} />
       <main className="flex-1 flex flex-col min-w-0">
         <Header title={currentNav.title} description={currentNav.description} />
         <div className="flex-1 overflow-auto p-6">

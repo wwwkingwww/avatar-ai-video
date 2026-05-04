@@ -1,0 +1,66 @@
+[2026-05-03T13:38:48.324Z] ========================================
+[2026-05-03T13:38:48.326Z]  RunningHub Dialog Spy - Network Monitor 
+[2026-05-03T13:38:48.326Z] ========================================
+[2026-05-03T13:38:48.326Z] 
+[2026-05-03T13:38:48.327Z] Target: https://www.runninghub.cn/projects/
+[2026-05-03T13:38:48.327Z] Output: E:\cusorspace\avatar-ai-video\output\rh-spy
+[2026-05-03T13:38:48.327Z] 
+[2026-05-03T13:38:48.988Z] Browser launched (visible mode - please log in)
+[2026-05-03T13:38:49.084Z] Navigating to RunningHub...
+[2026-05-03T13:38:53.770Z] Current URL: https://www.runninghub.cn/projects/
+[2026-05-03T13:38:53.771Z] ✅ Already logged in or no auth required
+[2026-05-03T13:38:53.771Z] Waiting for user to complete the AI dialog + video generation...
+[2026-05-03T13:38:53.771Z] When done, press Ctrl+C in this terminal to stop capture and save results.
+[2026-05-03T13:38:53.772Z] 
+[2026-05-03T13:38:56.781Z] 📋 Dialog state changed: [{"title":"","visible":true,"hasInput":false,"hasMessages":0,"text":"  微信扫码登录 登录即代表同意 用户服务协议和 隐私政策其他登录方式验证码登录密码登录Google登录"},{"title":"","visible":true,"hasInput":false,"hasMessages":0,"text":""},{"title":"","visible":true,"hasInput":false,"hasMessages":0,"text":"  微信扫码登录 登录即代表同意 用户服务协议和 隐私政策其他登录方式验证码登录密码登录Google登录"},{"title":"","visible":true,"hasInput":false,"hasMessages":0,"text":"  微信扫码登录 登录即代表
+[2026-05-03T13:39:04.713Z] 🔌 WebSocket opened: wss://www.runninghub.cn/socket.io/?token=eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiIxOTU3NDEzODM3MTc3ODE1MDQyIiwiZXhwIjoxNzgwNDA3NTQ2LCJjcmVhdGVkIjoxNzc3ODE1NTQ2Nzg3LCJ1c2VybmFtZSI6IjFjMDM0ZjA0NzA3NmQ2ZTRiMzQwY2I2M2JmZjIzNTdlIiwidXNlclJlZ2lvbiI6InpoX0NOIn0.Yvs91HJ8rTrNu7_n4orj2LcrIqHuAV6GnfyahIQgeBCJa1af4DJGklJNBS9ORkaoMAl87fH7m2qjZOVpaPhC8A&workflowId=0&clientId=86b097528bd5f93fe6500293a6683c58&userId=1957413837177815042&EIO=4&transport=websocket
+[2026-05-03T13:39:04.762Z] 🔌 WS ← 0{"sid":"d4e9f091-14af-459a-b26b-d6b6782a7aee","upgrades":[],"pingInterval":10000,"pingTimeout":60000}
+[2026-05-03T13:39:04.763Z] 🔌 WS → 40
+[2026-05-03T13:39:04.813Z] 🔌 WS ← 40{"sid":"d4e9f091-14af-459a-b26b-d6b6782a7aee"}
+[2026-05-03T13:39:05.788Z] 📋 Dialog state changed: [{"title":"","visible":true,"hasInput":false,"hasMessages":0,"text":""}]
+[2026-05-03T13:39:14.792Z] 🔌 WS ← 2
+[2026-05-03T13:39:14.792Z] 🔌 WS → 3
+[2026-05-03T13:39:24.886Z] 🔌 WS ← 2
+[2026-05-03T13:39:24.887Z] 🔌 WS → 3
+[2026-05-03T13:39:34.986Z] 🔌 WS ← 2
+[2026-05-03T13:39:34.986Z] 🔌 WS → 3
+[2026-05-03T13:39:45.086Z] 🔌 WS ← 2
+[2026-05-03T13:39:45.086Z] 🔌 WS → 3
+[2026-05-03T13:39:55.189Z] 🔌 WS ← 2
+[2026-05-03T13:39:55.190Z] 🔌 WS → 3
+[2026-05-03T13:40:05.286Z] 🔌 WS ← 2
+[2026-05-03T13:40:05.286Z] 🔌 WS → 3
+[2026-05-03T13:40:15.388Z] 🔌 WS ← 2
+[2026-05-03T13:40:15.388Z] 🔌 WS → 3
+[2026-05-03T13:40:25.493Z] 🔌 WS ← 2
+[2026-05-03T13:40:25.495Z] 🔌 WS → 3
+[2026-05-03T13:40:35.583Z] 🔌 WS ← 2
+[2026-05-03T13:40:35.583Z] 🔌 WS → 3
+[2026-05-03T13:40:45.691Z] 🔌 WS ← 2
+[2026-05-03T13:40:45.692Z] 🔌 WS → 3
+[2026-05-03T13:40:55.782Z] 🔌 WS ← 2
+[2026-05-03T13:40:55.783Z] 🔌 WS → 3
+[2026-05-03T13:41:05.886Z] 🔌 WS ← 2
+[2026-05-03T13:41:05.886Z] 🔌 WS → 3
+[2026-05-03T13:41:15.991Z] 🔌 WS ← 2
+[2026-05-03T13:41:15.992Z] 🔌 WS → 3
+[2026-05-03T13:41:26.080Z] 🔌 WS ← 2
+[2026-05-03T13:41:26.080Z] 🔌 WS → 3
+[2026-05-03T13:41:36.185Z] 🔌 WS ← 2
+[2026-05-03T13:41:36.186Z] 🔌 WS → 3
+[2026-05-03T13:41:46.280Z] 🔌 WS ← 2
+[2026-05-03T13:41:46.281Z] 🔌 WS → 3
+[2026-05-03T13:41:56.377Z] 🔌 WS ← 2
+[2026-05-03T13:41:56.378Z] 🔌 WS → 3
+[2026-05-03T13:42:06.477Z] 🔌 WS ← 2
+[2026-05-03T13:42:06.478Z] 🔌 WS → 3
+[2026-05-03T13:42:16.577Z] 🔌 WS ← 2
+[2026-05-03T13:42:16.578Z] 🔌 WS → 3
+[2026-05-03T13:42:26.677Z] 🔌 WS ← 2
+[2026-05-03T13:42:26.677Z] 🔌 WS → 3
+[2026-05-03T13:42:36.776Z] 🔌 WS ← 2
+[2026-05-03T13:42:36.777Z] 🔌 WS → 3
+[2026-05-03T13:42:46.875Z] 🔌 WS ← 2
+[2026-05-03T13:42:46.876Z] 🔌 WS → 3
+[2026-05-03T13:42:56.979Z] 🔌 WS ← 2
+[2026-05-03T13:42:56.979Z] 🔌 WS → 3

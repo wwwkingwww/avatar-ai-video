@@ -35,11 +35,15 @@ function inferTaskType(outputType, inputTypes) {
 }
 
 function normalizeField(p) {
+  let dv = p.defaultValue !== undefined ? String(p.defaultValue) : '';
+  if (!dv && (p.type === 'LIST' || p.type === 'ENUM') && Array.isArray(p.options) && p.options.length > 0) {
+    dv = String(p.options[0].value ?? p.options[0]);
+  }
   return {
     nodeId: p.fieldKey,
     nodeName: p.label || p.fieldKey,
     fieldName: p.fieldKey,
-    fieldValue: p.defaultValue !== undefined ? String(p.defaultValue) : '',
+    fieldValue: dv,
     fieldType: p.type,
     fieldData: p.options || null,
     description: p.description || p.label || p.fieldKey,

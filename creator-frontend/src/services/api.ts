@@ -1,4 +1,4 @@
-import type { ConfirmData, TaskResult, TaskStatusInfo, UploadedFile, ModelRecommendation } from '../types';
+import type { TaskResult, TaskStatusInfo, UploadedFile, ModelRecommendation } from '../types';
 
 const BASE = '/api/sessions';
 
@@ -81,19 +81,11 @@ export async function uploadFile(sessionId: string, file: File): Promise<Uploade
   return { url: data.url, name: data.name, size: data.size };
 }
 
-export async function getConfirmData(sessionId: string): Promise<ConfirmData> {
-  const res = await fetch(`${BASE}/${sessionId}/confirm`);
-  if (!res.ok) throw new Error('获取确认数据失败');
-  const data = await res.json();
-  if (!data.success) throw new Error(data.error);
-  return { items: data.items, missing: data.missing };
-}
-
-export async function submitTask(sessionId: string, scheduledAt?: string | null): Promise<TaskResult> {
+export async function submitTask(sessionId: string, scheduledAt?: string | null, selectedModel?: unknown): Promise<TaskResult> {
   const res = await fetch(`${BASE}/${sessionId}/submit`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ scheduledAt: scheduledAt || null }),
+    body: JSON.stringify({ scheduledAt: scheduledAt || null, selectedModel: selectedModel || null }),
   });
   if (!res.ok) throw new Error('提交失败');
   const data = await res.json();
@@ -107,11 +99,21 @@ export async function submitTask(sessionId: string, scheduledAt?: string | null)
   };
 }
 
-export async function getCapabilities(): Promise<{
+export async function approvePublish(sessionId: string): Promise<{ success: boolean; message: string }> {
+  const res = await fetch(`${BASE}/${sessionId}/approve`, { method: 'POST' });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: 'Approve publish failed' }));
+    throw new Error(err.error || 'Approve publish failed');
+  }
+  return res.json();
+}
+
+export async function getCapabilities(taskType?: string): Promise<{
   taskTypes: string[];
   models: ModelRecommendation[];
 }> {
-  const res = await fetch('/api/capabilities');
+  const url = taskType ? `/api/capabilities?taskType=${encodeURIComponent(taskType)}` : '/api/capabilities';
+  const res = await fetch(url);
   if (!res.ok) throw new Error('获取能力列表失败');
   const data = await res.json();
   return { taskTypes: data.taskTypes || [], models: data.models || [] };

@@ -1,32 +1,33 @@
-import { useEffect, useRef } from 'react';
-import type { Message } from '../types';
-import { Bubble } from './Bubble';
+import { useEffect, useRef } from 'react'
+import type { Message } from '../types'
+import { Bubble } from './Bubble'
 
 interface MessageListProps {
-  messages: Message[];
-  streamingText: string;
-  isStreaming: boolean;
+  messages: Message[]
+  streamingText: string
+  isStreaming: boolean
+  onOptionSelect?: (option: string) => void
 }
 
-export function MessageList({ messages, streamingText, isStreaming }: MessageListProps) {
-  const bottomRef = useRef<HTMLDivElement>(null);
+export function MessageList({ messages, streamingText, isStreaming, onOptionSelect }: MessageListProps) {
+  const endRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, streamingText]);
+    endRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages, streamingText])
 
   return (
     <div className="message-list">
       {messages.map((msg) => (
-        <Bubble key={msg.id} message={msg} />
+        <Bubble key={msg.id} message={msg} onOptionSelect={onOptionSelect} />
       ))}
       {isStreaming && streamingText && (
         <Bubble
-          message={{ id: 'streaming', role: 'assistant', content: streamingText, timestamp: Date.now() }}
+          message={{ id: 'stream', role: 'assistant', content: streamingText, timestamp: Date.now() }}
           isStreaming
         />
       )}
-      <div ref={bottomRef} />
+      <div ref={endRef} />
     </div>
-  );
+  )
 }

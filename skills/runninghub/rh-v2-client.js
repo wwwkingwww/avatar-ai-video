@@ -203,6 +203,125 @@ export class RHV2Client {
     const result = await this.pollTask(taskId)
     return { taskId, outputs: extractOutputs(result.data), rawResponse: result.data }
   }
+
+  async getWorkflowNodes(webappId) {
+    const data = await retryFetch(() =>
+      this._fetch('GET', `/task/openapi/nodes?webappId=${encodeURIComponent(webappId)}`)
+    )
+
+    const nodes = data.nodeInfoList || data.nodes || data.data
+    if (!nodes || !Array.isArray(nodes)) {
+      throw new RHV2Error(`getWorkflowNodes: unexpected response for webappId=${webappId}`)
+    }
+    return nodes
+  }
+
+  async submitWorkflow(webappId, nodeInfoList) {
+    const data = await retryFetch(() =>
+      this._fetch('POST', '/task/openapi/ai-app/run', {
+        body: { webappId, nodeInfoList },
+      })
+    )
+
+    const errorCode = data.errorCode || data.error_code
+    const errorMsg = data.errorMessage || data.error_message
+    if (errorCode || errorMsg) {
+      throw new RHV2Error(`Workflow submit failed: ${errorMsg || errorCode}`, 400)
+    }
+
+    const taskId = data.taskId || data.task_id || (data.data && (data.data.taskId || data.data.task_id))
+    if (!taskId) {
+      throw new RHV2Error(`Workflow submit failed: missing taskId in response: ${JSON.stringify(data).substring(0, 200)}`)
+    }
+    return String(taskId)
+  }
+
+  async queryWorkflowOutputs(taskId) {
+    const data = await this._fetch('POST', '/task/openapi/outputs', { body: { taskId } })
+
+    const errorCode = data.errorCode || data.error_code
+    const errorMsg = data.errorMessage || data.error_message
+    if (errorCode || errorMsg) {
+      throw new RHV2Error(`Workflow task failed: ${errorMsg || errorCode} [taskId=${taskId}]`)
+    }
+
+    const status = String(data.status || (data.data && data.data.status) || '').trim().toUpperCase()
+    if (status === SUCCESS_STATUS) {
+      return data
+    }
+    if (FAILURE_STATUSES.has(status)) {
+      throw new RHV2Error(`Workflow task ended with status=${status} [taskId=${taskId}]`)
+    }
+    if (!NON_TERMINAL_STATUSES.has(status)) {
+      throw new RHV2Error(`Unknown workflow task status=${status} [taskId=${taskId}]`)
+    }
+    return null
+  }
+
+  async pollWorkflowTask(taskId, timeoutMs = 10 * 60 * 1000, intervalMs = 5000) {
+    const deadline = Date.now() + timeoutMs
+    let consecutiveFailures = 0
+
+    while (Date.now() < deadline) {
+      await new Promise((r) => setTimeout(r, intervalMs))
+
+      try {
+        const data = await this.queryWorkflowOutputs(taskId)
+        consecutiveFailures = 0
+        if (data) {
+          return { status: 'SUCCESS', data }
+        }
+      } catch (e) {
+        consecutiveFailures++
+        if (consecutiveFailures >= 5 || !(e instanceof RHV2Error)) {
+          throw e
+        }
+        await new Promise((r) => setTimeout(r, Math.min(consecutiveFailures * 2, 10) * 1000))
+      }
+    }
+
+    throw new RHV2Error(`Workflow task ${taskId} timed out after ${timeoutMs / 60000}min`)
+  }
+
+  async runWorkflow(webappId, nodeInfoList, localFiles) {
+    const processedNodeList = nodeInfoList.map((n) => ({ ...n, fieldValue: String(n.fieldValue ?? '') }))
+
+    if (localFiles) {
+      for (const [nodeIdFieldName, files] of Object.entries(localFiles)) {
+        const fileList = Array.isArray(files) ? files : [files]
+        const urls = []
+        for (const file of fileList) {
+          const buffer = typeof file === 'string' ? file : file.buffer
+          const name = file.name || 'upload'
+          const url = await this.uploadFile(buffer, name)
+          urls.push(url)
+        }
+
+        const [nodeId, fieldName] = nodeIdFieldName.split(':')
+        const targetNode = processedNodeList.find((n) => n.nodeId === nodeId && n.fieldName === fieldName)
+        if (targetNode) {
+          targetNode.fieldValue = fileList.length === 1 ? urls[0] : urls.join(',')
+        }
+      }
+    }
+
+    const taskId = await this.submitWorkflow(webappId, processedNodeList)
+    const result = await this.pollWorkflowTask(taskId)
+    return { taskId, outputs: extractWorkflowOutputs(result.data), rawResponse: result.data }
+  }
+}
+
+export function parseNodeInfoList(model, params, uploads) {
+  if (!model || !model.fields) return []
+  return model.fields.map((field) => {
+    const overrideKey = `${field.nodeId}:${field.fieldName}`
+    const uploaded = uploads && uploads[overrideKey]
+    return {
+      nodeId: field.nodeId,
+      fieldName: field.fieldName,
+      fieldValue: uploaded ? String(uploaded.fileName) : String(params[field.fieldName] ?? field.fieldValue ?? ''),
+    }
+  })
 }
 
 export function extractOutputs(response) {
@@ -217,4 +336,36 @@ export function extractOutputs(response) {
     throw new RHV2Error('No outputs found in final response')
   }
   return outputs
+}
+
+export function extractWorkflowOutputs(response) {
+  const outputs = response.outputs || response.data?.outputs || []
+  if (Array.isArray(outputs) && outputs.length > 0) {
+    if (typeof outputs[0] === 'string') return outputs.map(String)
+    return outputs.map((item) => {
+      if (typeof item === 'string') return item
+      return item.url || item.outputUrl || item.videoUrl || item.imageUrl || item.fileUrl || ''
+    }).filter(Boolean)
+  }
+
+  const results = response.results || response.data?.results || []
+  if (results.length > 0) {
+    return results.map((item) => {
+      if (!item || typeof item !== 'object') return ''
+      return item.url || item.outputUrl || item.videoUrl || item.text || item.content || item.output || ''
+    }).filter(Boolean)
+  }
+
+  const flatUrls = []
+  const findUrls = (obj) => {
+    if (!obj || typeof obj !== 'object') return
+    if (obj.url || obj.videoUrl || obj.imageUrl) {
+      flatUrls.push(obj.url || obj.videoUrl || obj.imageUrl)
+    }
+    Object.values(obj).forEach((v) => { if (typeof v === 'object') findUrls(v) })
+  }
+  findUrls(response)
+  if (flatUrls.length > 0) return flatUrls
+
+  throw new RHV2Error('No outputs found in workflow response')
 }

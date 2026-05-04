@@ -1,10 +1,14 @@
 import { Worker, Queue } from 'bullmq'
 import { readFileSync, existsSync } from 'fs'
+import { resolve, dirname } from 'path'
+import { fileURLToPath } from 'url'
 import prisma from '../prisma/client.js'
-import { getSession } from '../services/session-manager.js'
+import { getSession, updateSession } from '../services/session-manager.js'
 import { dispatchTask } from '../services/task-dispatcher.js'
 import { uploadFromUrl } from '../services/minio-uploader.js'
 import { RHV2Client } from '../../skills/runninghub/rh-v2-client.js'
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
 
 const debugLog = (...args) => { if (process.env.DEBUG) console.log(...args); }; // eslint-disable-line no-console
 
@@ -12,41 +16,120 @@ const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379'
 const u = new URL(REDIS_URL)
 const connection = { host: u.hostname, port: parseInt(u.port || '6379') }
 
-const RH_BASE_V1 = 'https://rhtv.runninghub.cn'
-const RH_COOKIE = process.env.RUNNINGHUB_COOKIE || ''
 const RH_API_KEY = process.env.RH_API_KEY || ''
 const RH_API_BASE_URL = process.env.RH_API_BASE_URL || 'https://www.runninghub.cn/openapi/v2'
 
-const GEN_POLL_INTERVAL = 10000
-const GEN_POLL_TIMEOUT = 10 * 60 * 1000
+let modelRegistry = []
+try {
+  const registryPath = resolve(__dirname, '../../skills/runninghub/developer-kit/developer-kit/model-registry.public.json')
+  modelRegistry = JSON.parse(readFileSync(registryPath, 'utf-8'))
+  const count = Array.isArray(modelRegistry) ? modelRegistry.length : (modelRegistry.model_count || 0)
+  debugLog(`[gen-worker] loaded ${count} models from registry`)
+} catch (e) {
+  console.warn(`[gen-worker] failed to load model registry: ${e.message}`)
+}
+
+function lookupModel(endpoint) {
+  const list = Array.isArray(modelRegistry) ? modelRegistry : (modelRegistry.models || [])
+  return list.find(m => m.endpoint === endpoint) || null
+}
+
+function getInputFieldKeys(modelDef) {
+  const imageKeys = []
+  const videoKeys = []
+  const audioKeys = []
+  const params = modelDef?.params || []
+  for (const p of params) {
+    const key = p.fieldKey || p.fieldName
+    if (!key) continue
+    if (p.type === 'IMAGE') imageKeys.push(key)
+    if (p.type === 'VIDEO') videoKeys.push(key)
+    if (p.type === 'AUDIO') audioKeys.push(key)
+  }
+  return { imageKeys, videoKeys, audioKeys }
+}
+
+function detectHasMedia(files) {
+  let hasImage = false
+  let hasVideo = false
+  for (const f of files || []) {
+    const name = (f.name || f.url || '').toLowerCase()
+    const mime = (f.mimetype || f.type || '').toLowerCase()
+    if (mime.startsWith('image/') || name.endsWith('.png') || name.endsWith('.jpg') || name.endsWith('.jpeg') || name.endsWith('.webp')) {
+      hasImage = true
+    }
+    if (mime.startsWith('video/') || name.endsWith('.mp4') || name.endsWith('.mov') || name.endsWith('.avi') || name.endsWith('.webm')) {
+      hasVideo = true
+    }
+  }
+  return { hasImage, hasVideo }
+}
 
 async function generateViaV2(task, session) {
   const ctx = session.context || {}
 
-  if (!ctx.selectedModel?.endpoint) {
-    throw new Error('V2 模式需要 selectedModel.endpoint')
+  const endpoint = ctx.selectedModel?.endpoint || task.modelEndpoint
+  if (!endpoint) {
+    throw new Error('未指定模型端点，无法生成视频')
   }
+
+  const modelDef = lookupModel(endpoint)
+
+  ctx.selectedModel = {
+    endpoint,
+    params: ctx.selectedModel?.params || task.modelParams || {},
+    fields: ctx.selectedModel?.fields || modelDef?.params || [],
+    inputTypes: ctx.selectedModel?.inputTypes || (modelDef ? [...new Set((modelDef.params || []).map(p => p.type?.toLowerCase()).filter(Boolean))] : []),
+    taskType: ctx.selectedModel?.taskType || '',
+  }
+
+  const sessionFiles = session.files || []
+  const { hasImage: fileHasImage, hasVideo: fileHasVideo } = detectHasMedia(sessionFiles)
+  const effectiveHasImage = ctx.intent?.hasImage || fileHasImage
+  const effectiveHasVideo = ctx.intent?.hasVideo || fileHasVideo
 
   const client = new RHV2Client(RH_API_KEY, RH_API_BASE_URL)
 
   const localFiles = {}
-  if ((ctx.intent?.hasImage || ctx.intent?.hasVideo) && (session.files || []).length > 0) {
-    for (const file of session.files) {
-      const fileBuffer = file.buffer || (file.path && existsSync(file.path) ? readFileSync(file.path) : Buffer.from(''))
-      const model = ctx.selectedModel
-      const imageFields = model.inputTypes?.includes('image') ? ['imageUrl', 'imageUrls', 'image'] : []
-      const videoFields = model.inputTypes?.includes('video') ? ['videoUrl', 'videoUrls', 'video'] : []
+  if ((effectiveHasImage || effectiveHasVideo) && sessionFiles.length > 0) {
+    const { imageKeys, videoKeys } = getInputFieldKeys(modelDef)
 
-      const fieldKey = imageFields[0] || videoFields[0] || 'imageUrl'
+    for (const file of sessionFiles) {
+      const fileBuffer = file.buffer || (file.path && existsSync(file.path) ? readFileSync(file.path) : Buffer.from(''))
+      if (!fileBuffer || fileBuffer.length === 0) continue
+
+      const name = (file.name || file.url || '').toLowerCase()
+      const mime = (file.mimetype || file.type || '').toLowerCase()
+      const isVideo = mime.startsWith('video/') || name.endsWith('.mp4') || name.endsWith('.mov')
+
+      let fieldKey
+      if (isVideo && videoKeys.length > 0) {
+        fieldKey = videoKeys[0]
+      } else if (!isVideo && imageKeys.length > 0) {
+        fieldKey = imageKeys[0]
+      } else if (videoKeys.length > 0) {
+        fieldKey = videoKeys[0]
+      } else if (imageKeys.length > 0) {
+        fieldKey = imageKeys[0]
+      } else {
+        console.warn(`[gen-worker] no IMAGE/VIDEO field found in model ${endpoint}, skipping file upload`)
+        continue
+      }
+
       const filesList = localFiles[fieldKey] || []
-      filesList.push({ buffer: fileBuffer, name: file.name || `upload.${file.type?.startsWith('video') ? 'mp4' : 'png'}` })
+      filesList.push({ buffer: fileBuffer, name: file.name || `upload.${isVideo ? 'mp4' : 'png'}` })
       localFiles[fieldKey] = filesList
+      debugLog(`[gen-worker] mapped file to field "${fieldKey}" (isVideo=${isVideo})`)
     }
   }
 
-  const payload = buildV2Payload(ctx.selectedModel, localFiles)
+  if (Object.keys(localFiles).length === 0 && sessionFiles.length > 0) {
+    console.warn(`[gen-worker] WARNING: session has ${sessionFiles.length} files but none were mapped to model fields. Model ${endpoint} may not support image/video input.`)
+  }
 
-  debugLog(`[gen-worker] V2 submitting to ${ctx.selectedModel.endpoint}`)
+  const payload = buildV2Payload(ctx.selectedModel, localFiles, ctx)
+
+  debugLog(`[gen-worker] V2 submitting to ${ctx.selectedModel.endpoint}, localFiles keys: ${Object.keys(localFiles).join(',') || 'none'}`)
   const result = await client.run(ctx.selectedModel.endpoint, payload, localFiles)
   debugLog(`[gen-worker] V2 task ${result.taskId} completed, outputs: ${result.outputs.length}`)
 
@@ -58,28 +141,45 @@ async function generateViaV2(task, session) {
   }
 }
 
-function buildV2Payload(selectedModel, localFiles) {
-  const fields = selectedModel.fields || []
-  const params = selectedModel.params || {}
+function buildV2Payload(selectedModel, localFiles, ctx) {
+  const userParams = selectedModel.params || {}
   const payload = {}
+  const intent = ctx?.intent || {}
+  const script = intent.script || ctx?.script || ''
+
+  const model = lookupModel(selectedModel.endpoint)
+  const fields = model?.params || selectedModel.fields || []
 
   for (const field of fields) {
-    const key = field.fieldName || field.fieldKey
+    const key = field.fieldKey || field.fieldName
     if (!key) continue
 
-    if (params[key] !== undefined) {
-      payload[key] = params[key]
-    } else if (field.fieldValue !== undefined && field.fieldValue !== '') {
-      payload[key] = coerceValue(field, field.fieldValue)
+    if (userParams[key] !== undefined) {
+      payload[key] = userParams[key]
+    } else if (field.defaultValue !== undefined && field.defaultValue !== null) {
+      payload[key] = field.defaultValue
+    } else if (field.fieldValue !== undefined) {
+      payload[key] = coerceValue(field, String(field.fieldValue ?? ''))
+    }
+  }
+
+  if (script) {
+    const promptKey = fields.find(f => {
+      const k = (f.fieldKey || f.fieldName || '').toLowerCase()
+      return k === 'prompt' || k.includes('prompt') || k.includes('text')
+    })
+    if (promptKey) {
+      payload[promptKey.fieldKey || promptKey.fieldName] = script
+    } else {
+      payload.prompt = script
     }
   }
 
   for (const [fileKey] of Object.entries(localFiles)) {
-    if (!payload[fileKey]) {
-      payload[fileKey] = ''
-    }
+    if (!payload[fileKey]) payload[fileKey] = ''
   }
 
+  debugLog(`[gen-worker] buildV2Payload: ${Object.keys(payload).length} fields`, Object.keys(payload))
   return payload
 }
 
@@ -88,52 +188,6 @@ function coerceValue(field, value) {
   if (field.fieldType === 'FLOAT' || field.type === 'FLOAT') return parseFloat(value)
   if (field.fieldType === 'BOOLEAN' || field.type === 'BOOLEAN') return value === 'true' || value === true
   return String(value)
-}
-
-async function submitToRunningHubV1(task, session) {
-  if (!RH_COOKIE) throw new Error('RUNNINGHUB_COOKIE 未配置')
-  const ctx = session?.context || {}
-  const prompt = (ctx.intent?.script || ctx.script || task.script || '生成一个视频')
-  const res = await fetch(`${RH_BASE_V1}/canvas/generate`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Cookie: RH_COOKIE,
-      Referer: 'https://rhtv.runninghub.cn/',
-    },
-    body: JSON.stringify({ prompt, modelId: 'default', duration: 30, resolution: '1080p' }),
-  })
-  if (!res.ok) {
-    const text = await res.text().catch(() => '')
-    throw new Error(`RunningHub V1 提交失败 HTTP ${res.status}: ${text.substring(0, 200)}`)
-  }
-  const data = await res.json()
-  const rhTaskId = data.taskId || data.data?.taskId
-  if (!rhTaskId) throw new Error(`RunningHub V1 未返回 taskId: ${JSON.stringify(data).substring(0, 200)}`)
-  return rhTaskId
-}
-
-async function pollRunningHubV1(rhTaskId) {
-  const deadline = Date.now() + GEN_POLL_TIMEOUT
-  while (Date.now() < deadline) {
-    await new Promise((r) => setTimeout(r, GEN_POLL_INTERVAL))
-    const res = await fetch(`${RH_BASE_V1}/canvas/task/${rhTaskId}`, {
-      headers: { Cookie: RH_COOKIE, Referer: 'https://rhtv.runninghub.cn/' },
-    })
-    if (!res.ok) { console.warn(`[gen-worker] V1 poll HTTP ${res.status}, retrying...`); continue }
-    const data = await res.json()
-    const status = data.status || data.data?.status || ''
-    if (status === 'completed' || status === 'success' || status === 'done') {
-      const videoUrl = data.videoUrl || data.data?.videoUrl || data.result?.videoUrl || ''
-      if (!videoUrl) throw new Error('RunningHub V1 任务完成但未返回 videoUrl')
-      return videoUrl
-    }
-    if (status === 'failed' || status === 'error') {
-      throw new Error(`RunningHub V1 任务失败: ${data.error || data.message || status}`)
-    }
-    debugLog(`[gen-worker] V1 task ${rhTaskId} status: ${status}, polling...`);
-  }
-  throw new Error(`RunningHub V1 任务超时 (${GEN_POLL_TIMEOUT / 60000}min)`)
 }
 
 
@@ -154,36 +208,11 @@ const worker = new Worker('generation', async (job) => {
     const task = await prisma.videoTask.findUnique({ where: { id: taskId } })
     if (!task) throw new Error(`Task ${taskId} not found`)
 
-    let videoUrl = null
-    let rhTaskId = null
-    let rhOutputs = null
-
-    if (RH_API_KEY) {
-      try {
-        const v2Result = await generateViaV2(task, session)
-        videoUrl = v2Result.videoUrl
-        rhTaskId = v2Result.rhTaskId
-        rhOutputs = v2Result.rawResponse
-        debugLog(`[gen-worker] V2 video generated: ${videoUrl}`)
-      } catch (e) {
-        console.warn(`[gen-worker] V2 生成失败: ${e.message}, 尝试 V1 回退...`)
-        if (RH_COOKIE) {
-          rhTaskId = await submitToRunningHubV1(task, session)
-          debugLog(`[gen-worker] V1 fallback task: ${rhTaskId}`)
-          videoUrl = await pollRunningHubV1(rhTaskId)
-          debugLog(`[gen-worker] V1 video generated: ${videoUrl}`)
-        } else {
-          throw new Error('V2 生成失败且未配置 RunningHub Cookie，无法回退 V1')
-        }
-      }
-    } else if (RH_COOKIE) {
-      rhTaskId = await submitToRunningHubV1(task, session)
-      debugLog(`[gen-worker] V1 task: ${rhTaskId}`)
-      videoUrl = await pollRunningHubV1(rhTaskId)
-      debugLog(`[gen-worker] V1 video generated: ${videoUrl}`)
-    } else {
-      throw new Error('未配置任何 RunningHub API 凭据 (RH_API_KEY 或 RUNNINGHUB_COOKIE)。请在环境变量中设置 RH_API_KEY 以使用 V2 API，或设置 RUNNINGHUB_COOKIE 使用 V1')
-    }
+    const v2Result = await generateViaV2(task, session)
+    let videoUrl = v2Result.videoUrl
+    const rhTaskId = v2Result.rhTaskId
+    const rhOutputs = v2Result.rawResponse
+    debugLog(`[gen-worker] video generated: ${videoUrl}`)
 
     let minioUrl = null
     if (videoUrl) {
@@ -200,24 +229,32 @@ const worker = new Worker('generation', async (job) => {
     await prisma.videoTask.update({
       where: { id: taskId },
       data: {
-        status: 'GENERATED',
+        status: 'AWAITING_REVIEW',
         videoUrl,
         rhTaskId: rhTaskId || undefined,
-        rhApiVersion: RH_API_KEY ? 'v2' : (RH_COOKIE ? 'v1' : undefined),
+        rhApiVersion: 'v2',
         rhOutputs: rhOutputs || undefined,
         thumbnailUrl: videoUrl ? videoUrl.replace(/\.mp4(\?.*)?$/, '.jpg') : null,
       },
     })
 
-    const platforms = (await getSession(sessionId))?.context?.platforms || []
-    await pubQueue.add('publish-all', {
-      taskId,
-      sessionId,
-      platforms,
-      videoUrl,
-    }, { jobId: `pub-${taskId}` })
+    await updateSession(sessionId, { status: 'awaiting_review' })
 
-    return { taskId, status: 'GENERATED', videoUrl }
+    const platforms = (await getSession(sessionId))?.context?.platforms || []
+    const autoPublish = !!((await getSession(sessionId))?.context?.autoPublish)
+    if (autoPublish && platforms.length > 0) {
+      debugLog(`[gen-worker] auto-publish enabled, queuing publish for ${platforms.length} platforms`)
+      await pubQueue.add('publish-all', {
+        taskId,
+        sessionId,
+        platforms,
+        videoUrl,
+      }, { jobId: `pub-${taskId}` })
+    } else {
+      debugLog(`[gen-worker] awaiting user review before publish (platforms=${platforms.length})`)
+    }
+
+    return { taskId, status: 'AWAITING_REVIEW', videoUrl }
   } catch (e) {
     console.error(`[gen-worker] task ${taskId} failed:`, e.message)
     await prisma.videoTask.update({
@@ -239,19 +276,15 @@ worker.on('failed', (job, err) => {
   console.error(`[gen-worker] job ${job?.id} failed:`, err.message)
 })
 
-debugLog('[gen-worker] started (V1/V2 dual channel)')
+debugLog('[gen-worker] started (V2 only)')
 
 const pubWorker = new Worker('publish', async (job) => {
   const { taskId, sessionId, platforms, videoUrl } = job.data
   debugLog(`[pub-worker] starting publish for task ${taskId}`)
 
   if (!platforms || platforms.length === 0) {
-    debugLog(`[pub-worker] task ${taskId}: no platforms to publish, marking done`)
-    await prisma.videoTask.update({
-      where: { id: taskId },
-      data: { status: 'PUBLISHED' },
-    })
-    return { taskId, status: 'PUBLISHED', publishedTo: [] }
+    debugLog(`[pub-worker] task ${taskId}: no platforms configured, skipping publish (stays at GENERATED)`)
+    return { taskId, status: 'GENERATED', publishedTo: [] }
   }
 
   await prisma.videoTask.update({

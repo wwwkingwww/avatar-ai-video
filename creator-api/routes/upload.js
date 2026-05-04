@@ -14,7 +14,17 @@ uploadRouter.post('/:id/upload', withSession(), upload.single('file'), async (re
     const session = req.session;
     const files = session.files || [];
     files.push(result);
-    await updateSession(session.id, { files });
+    const ctx = session.context || {};
+    if (!ctx.intent) ctx.intent = {};
+    const mime = (req.file.mimetype || '').toLowerCase();
+    const name = (req.file.originalname || '').toLowerCase();
+    if (mime.startsWith('image/') || name.endsWith('.png') || name.endsWith('.jpg') || name.endsWith('.jpeg') || name.endsWith('.webp')) {
+      ctx.intent.hasImage = true;
+    }
+    if (mime.startsWith('video/') || name.endsWith('.mp4') || name.endsWith('.mov') || name.endsWith('.avi') || name.endsWith('.webm')) {
+      ctx.intent.hasVideo = true;
+    }
+    await updateSession(session.id, { files, context: ctx });
     res.json({ success: true, ...result });
   } catch (e) {
     res.status(500).json({ success: false, error: e.message });

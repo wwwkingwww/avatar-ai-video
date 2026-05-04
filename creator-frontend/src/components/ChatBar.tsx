@@ -1,15 +1,15 @@
 import { useState, useCallback, KeyboardEvent } from 'react'
+import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { TASK_TYPE_IDS, taskTypeInfo } from '../services/videoConfig'
 
 interface ChatBarProps {
   onSend: (text: string) => void
-  onExpand: () => void
   isStreaming: boolean
 }
 
-export function ChatBar({ onSend, onExpand, isStreaming }: ChatBarProps) {
+export function ChatBar({ onSend, isStreaming }: ChatBarProps) {
   const [text, setText] = useState('')
 
   const handleSend = useCallback(() => {
@@ -53,9 +53,12 @@ export function ChatBar({ onSend, onExpand, isStreaming }: ChatBarProps) {
       <Button size="xs" onClick={handleSend} disabled={isStreaming || !text.trim()} className="shrink-0 whitespace-nowrap">
         ➤ 快速创建
       </Button>
-      <Button variant="outline" size="xs" onClick={onExpand} className="shrink-0 whitespace-nowrap">
-        ⛶ 展开对话
-      </Button>
+      <Link
+        to="/dashboard"
+        className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-xs font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-8 px-3 shrink-0"
+      >
+        ⛶ 管理后台
+      </Link>
     </div>
   )
 }
