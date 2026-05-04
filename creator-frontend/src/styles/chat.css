@@ -6,9 +6,15 @@
   display: flex;
   flex-direction: column;
   height: 100dvh;
-  max-width: 100%;
+  max-width: 520px;
   margin: 0 auto;
   background: var(--bg-primary);
+}
+
+@media (min-width: 1024px) {
+  .creator-app {
+    max-width: 900px;
+  }
 }
 
 /* ==========================================
