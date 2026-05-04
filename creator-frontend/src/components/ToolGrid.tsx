@@ -1,10 +1,10 @@
 const TOOLS = [
-  { icon: '✂️', label: 'Video Editor', status: 'Soon' },
-  { icon: '🎵', label: 'Sound Design', status: 'Soon' },
-  { icon: '📊', label: 'Analytics', status: 'Soon' },
-  { icon: '🖼', label: 'Cover Art', status: 'Soon' },
-  { icon: '📝', label: 'Copywriting', status: 'Soon' },
-  { icon: '🔗', label: 'Cross-post', status: 'Soon' },
+  { icon: '✂️', label: '视频剪辑', status: '开发中' },
+  { icon: '🎵', label: '配音配乐', status: '开发中' },
+  { icon: '📊', label: '数据分析', status: '开发中' },
+  { icon: '🖼', label: '封面设计', status: '开发中' },
+  { icon: '📝', label: '文案优化', status: '开发中' },
+  { icon: '🔗', label: '多平台同步', status: '开发中' },
 ]
 
 export function ToolGrid() {

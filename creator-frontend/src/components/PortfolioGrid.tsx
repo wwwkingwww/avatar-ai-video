@@ -4,31 +4,31 @@ import { cn } from '@/lib/utils'
 type TabKey = 'templates' | 'my-works' | 'featured'
 
 const TABS: { key: TabKey; label: string }[] = [
-  { key: 'templates', label: 'Templates' },
-  { key: 'my-works', label: 'Your Work' },
-  { key: 'featured', label: 'Curated' },
+  { key: 'templates', label: '官方模板' },
+  { key: 'my-works', label: '我的作品' },
+  { key: 'featured', label: '精选推荐' },
 ]
 
 const TEMPLATES = [
-  { icon: '🎤', label: 'Talking Head', desc: 'Personality-driven · 30s', highlight: true },
-  { icon: '📦', label: 'Product Reveal', desc: 'Cinematic close-ups · 45s' },
-  { icon: '📱', label: 'App Demo', desc: 'Screen capture style · 60s' },
-  { icon: '🎬', label: 'Vlog', desc: 'Day-in-the-life · 30s' },
-  { icon: '🎮', label: 'Gaming', desc: 'Highlight reel · 30s' },
-  { icon: '🍔', label: 'Food & Drink', desc: 'Tempting visuals · 45s' },
-  { icon: '💄', label: 'Beauty', desc: 'Step-by-step · 60s' },
-  { icon: '🏠', label: 'Real Estate', desc: 'Walkthrough · 60s' },
+  { icon: '🎤', label: '口播带货', desc: '真人出镜 · 30 秒', highlight: true },
+  { icon: '📦', label: '产品发布', desc: '电影级特写 · 45 秒' },
+  { icon: '📱', label: '应用演示', desc: '录屏风格 · 60 秒' },
+  { icon: '🎬', label: 'Vlog 日常', desc: '生活记录 · 30 秒' },
+  { icon: '🎮', label: '游戏集锦', desc: '高光时刻 · 30 秒' },
+  { icon: '🍔', label: '美食探店', desc: '诱人特写 · 45 秒' },
+  { icon: '💄', label: '美妆教程', desc: '步骤演示 · 60 秒' },
+  { icon: '🏠', label: '房屋展示', desc: '全景导览 · 60 秒' },
 ]
 
 const MY_WORKS_EXAMPLE = [
-  { title: 'Product Launch Reel', platform: 'Douyin', time: '5h ago', published: true },
+  { title: '新品发布宣传片', platform: '抖音', time: '5 小时前', published: true },
 ]
 
 const FEATURED = [
-  { title: 'Tech Review', author: '@studio_A', views: '12k views' },
-  { title: 'Street Food Tour', author: '@creator_B', views: '8.5k views' },
-  { title: 'Unboxing Magic', author: '@maker_C', views: '6.2k views' },
-  { title: 'App Walkthrough', author: '@dev_D', views: '3.8k views' },
+  { title: '数码测评', author: '@创作者_A', views: '1.2 万播放' },
+  { title: '街头美食探', author: '@创作者_B', views: '8.5 千播放' },
+  { title: '开箱魔盒', author: '@创作者_C', views: '6.2 千播放' },
+  { title: '功能演示', author: '@创作者_D', views: '3.8 千播放' },
 ]
 
 interface PortfolioGridProps {
@@ -99,7 +99,7 @@ export function PortfolioGrid({ onTemplateClick }: PortfolioGridProps) {
                 </div>
                 {work.published && (
                   <span className="absolute top-2 right-2 text-[10px] px-2 py-0.5 rounded font-medium bg-emerald-500/90 text-white">
-                    Published
+                    已发布
                   </span>
                 )}
                 <div className="p-3">
@@ -110,7 +110,7 @@ export function PortfolioGrid({ onTemplateClick }: PortfolioGridProps) {
             ))}
             <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border/30 bg-card/10 min-h-[120px] opacity-40 hover:opacity-60 transition-opacity cursor-pointer">
               <span className="text-2xl text-muted-foreground">+</span>
-              <span className="text-xs text-muted-foreground font-display italic">New Project</span>
+              <span className="text-xs text-muted-foreground font-display italic">创建新作品</span>
             </div>
           </>
         )}
@@ -130,9 +130,9 @@ export function PortfolioGrid({ onTemplateClick }: PortfolioGridProps) {
       </div>
 
       <p className="text-center text-xs text-muted-foreground font-display italic">
-        {activeTab === 'templates' && 'Click a template to auto-fill the chat —'}
-        {activeTab === 'my-works' && 'Sign in to see your full portfolio —'}
-        {activeTab === 'featured' && 'Weekly curation · Community submissions —'}
+        {activeTab === 'templates' && '点击模板自动填入对话 —'}
+        {activeTab === 'my-works' && '登录后查看完整作品集 —'}
+        {activeTab === 'featured' && '每周精选 · 社区投稿 —'}
       </p>
     </div>
   )

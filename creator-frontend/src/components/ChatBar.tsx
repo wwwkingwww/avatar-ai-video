@@ -26,7 +26,7 @@ export function ChatBar({ onSend, isStreaming }: ChatBarProps) {
   return (
     <div className="flex items-center gap-2.5 px-4 py-2.5 bg-card/30 border-b border-border/20 shrink-0">
       <span className="font-display text-sm font-semibold italic text-primary whitespace-nowrap shrink-0 tracking-wide">
-        Studio
+        创作
       </span>
       <div className="hidden lg:flex gap-1 shrink-0">
         {TASK_TYPE_IDS.map((id) => (
@@ -44,7 +44,7 @@ export function ChatBar({ onSend, isStreaming }: ChatBarProps) {
         value={text}
         onChange={(e) => setText(e.target.value)}
         onKeyDown={handleKeyDown}
-        placeholder="Describe your video idea..."
+        placeholder="描述你的视频创意..."
         disabled={isStreaming}
         className="flex-1 h-8 text-xs font-sans placeholder:text-muted-foreground/50"
       />
@@ -54,13 +54,13 @@ export function ChatBar({ onSend, isStreaming }: ChatBarProps) {
         disabled={isStreaming || !text.trim()}
         className="shrink-0 whitespace-nowrap rounded-full px-3.5 text-xs font-semibold"
       >
-        Create
+        创建
       </Button>
       <Link
         to="/dashboard"
         className="hidden sm:inline-flex shrink-0 text-[10px] text-muted-foreground hover:text-foreground transition-colors px-2 py-1 rounded border border-border/20 hover:border-border/50"
       >
-        Dashboard
+        后台
       </Link>
     </div>
   )
