@@ -40,6 +40,8 @@ venv/
 coverage/
 .nyc_output/
 test-results.json
+test-results/
+playwright-report/
 
 # Playwright analysis outputs (large raw files)
 output/api-detailed.json
