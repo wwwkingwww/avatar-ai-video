@@ -4,7 +4,7 @@ import { executeActions } from './action-engine.js';
 import { downloadVideo } from './file-downloader.js';
 import { getDeviceInfo } from './adb-bridge.js';
 
-const debugLog = (...args) => { if (process.env.DEBUG) console.log(...args); }; // eslint-disable-line no-console
+const debugLog = (...args) => { if (process.env.DEBUG) process.stderr.write(args.map(String).join(' ') + '\n') };
 
 const BROKER_URL = process.env.MQTT_BROKER || 'mqtt://127.0.0.1:1883';
 const PHONE_ID = process.env.PHONE_ID || 'phone_01';

@@ -1,4 +1,5 @@
 import type { TaskResult, TaskStatusInfo, UploadedFile, ModelRecommendation } from '../types';
+import { debugLog, debugError } from '../lib/logger';
 
 const BASE = '/api/sessions';
 
@@ -39,7 +40,7 @@ export async function sendMessage(
     handleError('请求超时，请重试');
   }, 60000);
 
-  console.log('[sendMessage] Starting fetch request...');
+  debugLog('[sendMessage] Starting fetch request...');
   try {
     const res = await fetch(`/api/sessions/${sessionId}/messages`, {
       method: 'POST',
@@ -48,7 +49,7 @@ export async function sendMessage(
       signal: controller.signal,
     });
     cleanup();
-    console.log('[sendMessage] Response received:', res.status);
+    debugLog('[sendMessage] Response received:', res.status);
     if (!res.ok) {
       let errorDetails = ''
       try {
@@ -89,7 +90,7 @@ export async function sendMessage(
         done = result.done;
         value = result.value;
       } catch (readErr: any) {
-        console.error('[sendMessage] reader.read() error:', readErr?.name, readErr?.message);
+        debugError('[sendMessage] reader.read() error:', readErr?.name, readErr?.message);
         const msg = readErr?.message || String(readErr);
         if (msg.includes('ERR_ABORTED') || msg.includes('aborted')) {
           handleError('请求被中断，请重试');
@@ -100,7 +101,7 @@ export async function sendMessage(
       }
 
       if (done) {
-        console.log('[sendMessage] Stream done. Chunks received:', chunkCount);
+        debugLog('[sendMessage] Stream done. Chunks received:', chunkCount);
         if (!receivedDone) {
           if (buffer.trim()) {
             for (const line of buffer.split('\n')) {
@@ -151,12 +152,12 @@ export async function sendMessage(
     cleanup();
     const msg = (e && e.message) ? e.message : String(e);
     const errorStr = `${e.name || ''} ${msg}`;
-    console.error('[sendMessage] fetch error:', e.name, msg);
+    debugError('[sendMessage] fetch error:', e.name, msg);
     if (e.name === 'AbortError') {
-      console.log('[sendMessage] Request aborted by timeout or user');
+      debugLog('[sendMessage] Request aborted by timeout or user');
       handleError('请求已取消');
     } else if (errorStr.includes('ERR_ABORTED')) {
-      console.log('[sendMessage] Request aborted by browser/network');
+      debugLog('[sendMessage] Request aborted by browser/network');
       handleError('请求被中断，请重试');
     } else {
       const isNetworkError = errorStr.includes('Failed to fetch') || errorStr.includes('NetworkError') || errorStr.includes('ERR_CONNECTION_REFUSED') || errorStr.includes('net::ERR') || errorStr.includes('fetch') || errorStr.includes('aborted');

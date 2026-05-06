@@ -53,12 +53,12 @@ async function importModels() {
   }
 
   if (!rawData) {
-    console.log('[import-models] No registry file found.');
+    process.stderr.write('[import-models] No registry file found.\n');
     return;
   }
 
   const models = Array.isArray(rawData) ? rawData : (rawData.models || []);
-  console.log(`[import-models] Found ${models.length} models in ${sourcePath}`);
+  process.stderr.write(`[import-models] Found ${models.length} models in ${sourcePath}\n`);
 
   let created = 0;
   let updated = 0;
@@ -106,8 +106,8 @@ async function importModels() {
     }
   }
 
-  console.log(`[import-models] Done: ${created} created, ${updated} updated, ${skipped} skipped`);
-  console.log(`[import-models] Total in database: ${await prisma.modelRegistry.count()}`);
+  process.stderr.write(`[import-models] Done: ${created} created, ${updated} updated, ${skipped} skipped\n`);
+  process.stderr.write(`[import-models] Total in database: ${await prisma.modelRegistry.count()}\n`);
 }
 
 importModels()

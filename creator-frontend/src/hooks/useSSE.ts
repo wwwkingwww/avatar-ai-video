@@ -1,5 +1,6 @@
 import { useRef, useCallback } from 'react';
 import { sendMessage } from '../services/api';
+import { debugLog } from '../lib/logger';
 
 interface SSEOptions {
   onChunk: (text: string) => void;
@@ -24,7 +25,7 @@ export function useSSE() {
   const connect = useCallback(
     async (sessionId: string, content: string, attachments: string[], opts: SSEOptions) => {
       if (activeRef.current) {
-        console.log('[useSSE] Already active, canceling previous request');
+        debugLog('[useSSE] Already active, canceling previous request');
         cancel();
       }
       activeRef.current = true;

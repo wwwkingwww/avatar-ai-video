@@ -8,10 +8,10 @@ function formatMessage(level, args) {
 
 export const logger = {
   debug(...args) {
-    if (CURRENT_LEVEL <= LOG_LEVELS.debug) console.log(...formatMessage('debug', args))
+    if (CURRENT_LEVEL <= LOG_LEVELS.debug) process.stdout.write(formatMessage('debug', args).join(' ') + '\n')
   },
   info(...args) {
-    if (CURRENT_LEVEL <= LOG_LEVELS.info) console.log(...formatMessage('info', args))
+    if (CURRENT_LEVEL <= LOG_LEVELS.info) process.stdout.write(formatMessage('info', args).join(' ') + '\n')
   },
   warn(...args) {
     if (CURRENT_LEVEL <= LOG_LEVELS.warn) console.warn(...formatMessage('warn', args))

@@ -12,7 +12,7 @@ import { FeedbackStore } from '../services/feedback-store.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
-const debugLog = (...args) => { if (process.env.DEBUG) console.log(...args); }; // eslint-disable-line no-console
+const debugLog = (...args) => { if (process.env.DEBUG) process.stderr.write(args.map(String).join(' ') + '\n') };
 
 const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379'
 const u = new URL(REDIS_URL)

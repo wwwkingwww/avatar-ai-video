@@ -1,6 +1,6 @@
 import mqtt from 'mqtt';
 
-const debugLog = (...args) => { if (process.env.DEBUG) console.log(...args); }; // eslint-disable-line no-console
+const debugLog = (...args) => { if (process.env.DEBUG) process.stderr.write(args.map(String).join(' ') + '\n') };
 
 const BROKER_URL = process.env.MQTT_BROKER || 'mqtt://mosquitto:1883';
 const TASK_TIMEOUT = 5 * 60 * 1000;

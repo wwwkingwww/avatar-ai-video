@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import type { Message, SessionState, UploadedFile, TaskResult } from '../types'
 import { createSession, uploadFile, submitTask, getSessionStatus } from '../services/api'
+import { debugLog, debugError } from '../lib/logger'
 import { parseOptions } from '../services/parseOptions'
 import { useSSE } from './useSSE'
 
@@ -114,10 +115,10 @@ export function useSession() {
     // 如果是确认生成命令，强制重置 isStreaming 状态（防止之前的中断导致状态卡住）
     const isConfirmCommand = /^(✓\s*)?(确认生成|开始制作|提交|确认并生成视频)/.test(content.trim())
     if (isConfirmCommand) {
-      console.log('[sendUserMessage] Confirm command detected, ensuring isStreaming is false');
+      debugLog('[sendUserMessage] Confirm command detected, ensuring isStreaming is false');
       setState(prev => ({ ...prev, isStreaming: false }));
     } else if (state.isStreaming) {
-      console.log('[sendUserMessage] Blocked: already streaming');
+      debugLog('[sendUserMessage] Blocked: already streaming');
       return
     }
 
@@ -127,20 +128,20 @@ export function useSession() {
     if (isConfirmCommand) {
       // 使用 ref 防止重复提交（比 state 更及时）
       if (isSubmittingRef.current) {
-        console.log('[sendUserMessage] Blocked: already submitting');
+        debugLog('[sendUserMessage] Blocked: already submitting');
         return
       }
       isSubmittingRef.current = true
       setIsSubmitting(true)
       try {
-        console.log('[sendUserMessage] Submitting task...');
+        debugLog('[sendUserMessage] Submitting task...');
         const result = await submitTask(sid, null, null)
-        console.log('[sendUserMessage] Task submitted:', result.taskId);
+        debugLog('[sendUserMessage] Task submitted:', result.taskId);
         setTaskId(result.taskId)
         setState(prev => ({ ...prev, status: 'submitted' }))
       } catch (e) {
         const err = e instanceof Error ? e.message : '提交失败'
-        console.error('[sendUserMessage] Submit failed:', err);
+        debugError('[sendUserMessage] Submit failed:', err);
         if (/generating|生成中|已提交|submitted/.test(err)) {
           try {
             const statusResult = await getSessionStatus(sid)
