@@ -9,7 +9,7 @@
     "verify:init": "node %USERPROFILE%/.trae-cn/scripts/verify-gate.cjs --init",
     "lint": "cd creator-api && npm run lint && cd ../creator-frontend && npm run lint && cd ../phone-agent && npm run lint && cd ../shared && npm run lint",
     "analyze": "node scripts/analyze-runninghub.js",
-    "test": "cd shared && npm run test && cd ../creator-api && npm run test && cd ../phone-agent && npm run test",
+    "test": "cd shared && npm run test && cd ../creator-api && npm run test && cd ../phone-agent && npm run test && cd ../creator-frontend && npm run test",
     "test:mock": "node scripts/test-e2e.js --mock",
     "test:e2e": "node scripts/test-e2e.js",
     "prepare": "husky"
