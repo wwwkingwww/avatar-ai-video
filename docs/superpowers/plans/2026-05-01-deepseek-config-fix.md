@@ -232,7 +232,7 @@ node -e "JSON.parse(require('fs').readFileSync('tmp-auth.json','utf8'))"
 - [ ] **V2: 确认硬编码 API Key 已被移除**
 
 ```powershell
-Select-String -Path scripts/cfg-deepseek.js -Pattern 'sk-4a9f3ef3d056407e9d1c5bc7c5fad500'
+Select-String -Path scripts/cfg-deepseek.js -Pattern 'sk-YOUR-ACTUAL-KEY-REDACTED'
 ```
 
 预期：无匹配（硬编码 key 已被移除）
