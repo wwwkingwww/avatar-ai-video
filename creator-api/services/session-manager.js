@@ -29,10 +29,11 @@ export async function getSession(id) {
   return {
     id,
     round: parseInt(data.round, 10),
-    status: data.status,
+    status: data.status || 'chatting',
     history: JSON.parse(data.history || '[]'),
     context: JSON.parse(data.context || '{}'),
     files: JSON.parse(data.files || '[]'),
+    taskId: data.taskId || null,
     createdAt: data.createdAt,
   };
 }

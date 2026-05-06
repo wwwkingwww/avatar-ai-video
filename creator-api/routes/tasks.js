@@ -56,7 +56,7 @@ tasksRouter.get('/:id/progress', async (req, res) => {
         })}\n\n`)
       }
 
-      const isTerminal = ['PUBLISHED', 'FAILED', 'PUBLISH_FAILED', 'CANCELLED'].includes(task.status)
+      const isTerminal = ['PUBLISHED', 'FAILED', 'PUBLISH_FAILED', 'CANCELLED', 'AWAITING_REVIEW', 'GENERATED'].includes(task.status)
       if (isTerminal) {
         res.write(`data: ${JSON.stringify({ type: 'done', status: task.status })}\n\n`)
         res.end()

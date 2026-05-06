@@ -4,9 +4,11 @@ import { resolve, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import prisma from '../prisma/client.js'
 import { getSession, updateSession } from '../services/session-manager.js'
-import { dispatchTask } from '../services/task-dispatcher.js'
+import { dispatchTask } from '../services/job-dispatcher.js'
 import { uploadFromUrl } from '../services/minio-uploader.js'
 import { RHV2Client } from '../../skills/runninghub/rh-v2-client.js'
+import { SmartModelRouter } from '../services/smart-model-router.js'
+import { FeedbackStore } from '../services/feedback-store.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
@@ -18,6 +20,27 @@ const connection = { host: u.hostname, port: parseInt(u.port || '6379') }
 
 const RH_API_KEY = process.env.RH_API_KEY || ''
 const RH_API_BASE_URL = process.env.RH_API_BASE_URL || 'https://www.runninghub.cn/openapi/v2'
+
+let smartRouter = null
+try {
+  const registryPath = resolve(__dirname, '../../skills/runninghub/developer-kit/developer-kit/model-registry.public.json')
+  const pricingPath = resolve(__dirname, '../../skills/runninghub/developer-kit/developer-kit/pricing.public.json')
+  smartRouter = new SmartModelRouter(registryPath, pricingPath, null)
+  await smartRouter.init()
+  debugLog(`[gen-worker] SmartModelRouter initialized with ${smartRouter.models?.length || 0} models`)
+} catch (e) {
+  console.warn(`[gen-worker] SmartModelRouter init failed: ${e.message}`)
+}
+
+let feedbackStore = null
+try {
+  const Redis = (await import('ioredis')).default
+  const redisClient = new Redis(REDIS_URL)
+  feedbackStore = new FeedbackStore(redisClient)
+  debugLog('[gen-worker] FeedbackStore initialized')
+} catch (e) {
+  console.warn(`[gen-worker] FeedbackStore init failed: ${e.message}`)
+}
 
 let modelRegistry = []
 try {
@@ -68,9 +91,23 @@ function detectHasMedia(files) {
 async function generateViaV2(task, session) {
   const ctx = session.context || {}
 
-  const endpoint = ctx.selectedModel?.endpoint || task.modelEndpoint
+  let endpoint = ctx.selectedModel?.endpoint || task.modelEndpoint
   if (!endpoint) {
-    throw new Error('未指定模型端点，无法生成视频')
+    if (smartRouter) {
+      try {
+        const userText = (ctx.intent?.script || '') + ' ' + (session.history || []).map(m => m.content || '').join(' ')
+        const smartResult = smartRouter.smartRecommend(userText, ctx.intent || {})
+        if (smartResult.recommendations.length > 0) {
+          endpoint = smartResult.recommendations[0].endpoint
+          debugLog(`[gen-worker] auto-selected: ${endpoint} (${smartResult.recommendations[0].whyRecommended})`)
+        }
+      } catch (e) {
+        debugLog(`[gen-worker] smart recommend failed: ${e.message}`)
+      }
+    }
+    if (!endpoint) {
+      throw new Error('未指定模型端点，无法生成视频')
+    }
   }
 
   const modelDef = lookupModel(endpoint)
@@ -95,7 +132,19 @@ async function generateViaV2(task, session) {
     const { imageKeys, videoKeys } = getInputFieldKeys(modelDef)
 
     for (const file of sessionFiles) {
-      const fileBuffer = file.buffer || (file.path && existsSync(file.path) ? readFileSync(file.path) : Buffer.from(''))
+      let fileBuffer = file.buffer || (file.path && existsSync(file.path) ? readFileSync(file.path) : null)
+      if (!fileBuffer && file.url) {
+        try {
+          const res = await fetch(file.url, { signal: AbortSignal.timeout(30000) })
+          if (res.ok) {
+            const ab = await res.arrayBuffer()
+            fileBuffer = Buffer.from(ab)
+            debugLog(`[gen-worker] downloaded file from URL: ${(fileBuffer.length / 1024).toFixed(1)}KB`)
+          }
+        } catch (e) {
+          console.warn(`[gen-worker] failed to download file from URL: ${e.message}`)
+        }
+      }
       if (!fileBuffer || fileBuffer.length === 0) continue
 
       const name = (file.name || file.url || '').toLowerCase()
@@ -117,9 +166,13 @@ async function generateViaV2(task, session) {
       }
 
       const filesList = localFiles[fieldKey] || []
-      filesList.push({ buffer: fileBuffer, name: file.name || `upload.${isVideo ? 'mp4' : 'png'}` })
-      localFiles[fieldKey] = filesList
-      debugLog(`[gen-worker] mapped file to field "${fieldKey}" (isVideo=${isVideo})`)
+      if (filesList.length === 0) {
+        filesList.push({ buffer: fileBuffer, name: file.name || `upload.${isVideo ? 'mp4' : 'png'}` })
+        localFiles[fieldKey] = filesList
+        debugLog(`[gen-worker] mapped file to field "${fieldKey}" (isVideo=${isVideo})`)
+      } else {
+        debugLog(`[gen-worker] skipping file for field "${fieldKey}" (already mapped)`)
+      }
     }
   }
 
@@ -240,6 +293,13 @@ const worker = new Worker('generation', async (job) => {
 
     await updateSession(sessionId, { status: 'awaiting_review' })
 
+    if (feedbackStore) {
+      const successEndpoint = session?.context?.selectedModel?.endpoint || task.modelEndpoint
+      if (successEndpoint) {
+        feedbackStore.recordGeneration(successEndpoint, { status: 'SUCCESS' }).catch(() => {})
+      }
+    }
+
     const platforms = (await getSession(sessionId))?.context?.platforms || []
     const autoPublish = !!((await getSession(sessionId))?.context?.autoPublish)
     if (autoPublish && platforms.length > 0) {
@@ -257,9 +317,19 @@ const worker = new Worker('generation', async (job) => {
     return { taskId, status: 'AWAITING_REVIEW', videoUrl }
   } catch (e) {
     console.error(`[gen-worker] task ${taskId} failed:`, e.message)
+    if (feedbackStore) {
+      const failSession = await getSession(sessionId).catch(() => null)
+      const failEndpoint = failSession?.context?.selectedModel?.endpoint || job.data.modelEndpoint
+      if (failEndpoint) {
+        feedbackStore.recordGeneration(failEndpoint, { status: 'FAILED' }).catch(() => {})
+      }
+    }
     await prisma.videoTask.update({
       where: { id: taskId },
       data: { status: 'FAILED', error: e.message, retryCount: { increment: 1 } },
+    })
+    await updateSession(sessionId, { status: 'failed' }).catch((ue) => {
+      console.warn(`[gen-worker] failed to update session status: ${ue.message}`)
     })
     throw e
   }

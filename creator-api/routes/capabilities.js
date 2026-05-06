@@ -5,6 +5,10 @@ export const capabilitiesRouter = Router()
 
 let router = null
 
+export function setModelRouter(r) {
+  router = r
+}
+
 function getRouter() {
   if (!router) {
     try {

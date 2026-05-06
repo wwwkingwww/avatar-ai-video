@@ -105,7 +105,7 @@ async function findPhoneForPlatform(platform) {
     setTimeout(() => {
       client.end();
       resolve(phones.length > 0 ? phones[0] : null);
-    }, 3000);
+    }, 15000);
   });
 }
 

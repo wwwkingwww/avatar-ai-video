@@ -50,6 +50,7 @@ messagesRouter.post('/:id/messages', withSession(), requireStatus('chatting'), a
             if (delta) {
               fullResponse += delta;
               res.write(`data: ${JSON.stringify({ type: 'chunk', content: delta })}\n\n`);
+              if (res.flush) res.flush();
             }
           } catch { /* skip */ }
         }
