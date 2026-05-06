@@ -94,6 +94,7 @@ export function Dashboard() {
       <main className="flex-1 flex flex-col min-w-0">
         <Header title={currentNav.title} description={currentNav.description} />
         <div className="flex-1 overflow-auto p-6">
+          <div style={{ maxWidth: 1280, marginLeft: 'auto', marginRight: 'auto' }}>
           {activeView === 'dashboard' && (
             <div className="space-y-6">
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -252,6 +253,7 @@ export function Dashboard() {
               </CardContent>
             </Card>
           )}
+          </div>
         </div>
       </main>
     </DashboardShell>

@@ -48,7 +48,7 @@ export interface IntentContext {
 export interface SessionState {
   sessionId: string | null;
   round: number;
-  status: 'chatting' | 'submitted';
+  status: 'chatting' | 'submitted' | 'generating';
   messages: Message[];
   isStreaming: boolean;
 }

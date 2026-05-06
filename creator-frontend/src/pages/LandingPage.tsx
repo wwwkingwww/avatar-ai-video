@@ -82,7 +82,7 @@ export function LandingPage() {
         </section>
 
         <section className="landing-chat-section">
-          <div className="rounded-xl border border-border/50 overflow-hidden bg-card/30 min-h-[420px] sm:min-h-[500px] flex flex-col shadow-2xl shadow-black/40">
+          <div className="rounded-xl border border-border/50 overflow-hidden bg-card/30 h-[420px] sm:h-[500px] flex flex-col shadow-2xl shadow-black/40">
             <div className="flex items-center gap-2 px-5 py-3 border-b border-border/30 bg-card/20">
               <div className="flex items-center gap-1.5">
                 <span className="h-2 w-2 rounded-full bg-red-400/60" />
@@ -117,6 +117,8 @@ export function LandingPage() {
               uploadedFiles={uploadedFiles}
               context={context}
               taskId={taskId}
+              sessionId={state.sessionId}
+              status={state.status}
               onSend={sendUserMessage}
               onUpload={handleFileUpload}
               onNewTask={() => { initSession() }}

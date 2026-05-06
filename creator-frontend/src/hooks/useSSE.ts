@@ -9,19 +9,50 @@ interface SSEOptions {
 
 export function useSSE() {
   const controllerRef = useRef<AbortController | null>(null);
+  const activeRef = useRef(false);
 
   const cancel = useCallback(() => {
-    controllerRef.current?.abort();
-    controllerRef.current = null;
+    if (controllerRef.current) {
+      try {
+        controllerRef.current.abort();
+      } catch { /* ignore */ }
+      controllerRef.current = null;
+    }
+    activeRef.current = false;
   }, []);
 
   const connect = useCallback(
-    (sessionId: string, content: string, attachments: string[], opts: SSEOptions) => {
-      cancel();
-      controllerRef.current = sendMessage(
-        sessionId, content, attachments,
-        opts.onChunk, opts.onDone, opts.onError
-      );
+    async (sessionId: string, content: string, attachments: string[], opts: SSEOptions) => {
+      if (activeRef.current) {
+        console.log('[useSSE] Already active, canceling previous request');
+        cancel();
+      }
+      activeRef.current = true;
+
+      try {
+        controllerRef.current = await sendMessage(
+          sessionId, content, attachments,
+          (text) => {
+            if (!activeRef.current) return;
+            opts.onChunk(text);
+          },
+          (info) => {
+            activeRef.current = false;
+            controllerRef.current = null;
+            opts.onDone(info);
+          },
+          (err) => {
+            activeRef.current = false;
+            controllerRef.current = null;
+            opts.onError(err);
+          }
+        );
+      } catch (e) {
+        activeRef.current = false;
+        controllerRef.current = null;
+        const errMsg = e instanceof Error ? e.message : String(e);
+        opts.onError(errMsg);
+      }
     },
     [cancel]
   );

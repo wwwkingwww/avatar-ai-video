@@ -33,12 +33,14 @@
   --safe-bottom: env(safe-area-inset-bottom, 16px);
 }
 
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body {
-  font-family: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
-  background: var(--bg-primary);
-  color: var(--text-primary);
-  -webkit-font-smoothing: antialiased;
-  min-height: 100dvh;
+@layer base {
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    -webkit-font-smoothing: antialiased;
+    min-height: 100dvh;
+  }
+  #root { min-height: 100dvh; display: flex; flex-direction: column; }
 }
-#root { min-height: 100dvh; display: flex; flex-direction: column; }

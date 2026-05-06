@@ -6,7 +6,7 @@ import { Link } from 'react-router-dom'
 export function CreatorPage() {
   const {
     step, state, streamingText, uploadedFiles,
-    context, taskId, initSession, sendUserMessage, handleFileUpload,
+    context, taskId, isSubmitting, initSession, sendUserMessage, handleFileUpload,
   } = useSession()
 
   return (
@@ -25,6 +25,9 @@ export function CreatorPage() {
         uploadedFiles={uploadedFiles}
         context={context}
         taskId={taskId}
+        sessionId={state.sessionId}
+        status={state.status}
+        isSubmitting={isSubmitting}
         onSend={sendUserMessage}
         onUpload={handleFileUpload}
         onNewTask={() => { initSession() }}

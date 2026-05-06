@@ -11,10 +11,16 @@ interface MessageListProps {
 
 export function MessageList({ messages, streamingText, isStreaming, onOptionSelect }: MessageListProps) {
   const endRef = useRef<HTMLDivElement>(null)
+  const prevMsgCountRef = useRef(messages.length)
 
   useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages, streamingText])
+    const newMsgAdded = messages.length > prevMsgCountRef.current
+    prevMsgCountRef.current = messages.length
+    endRef.current?.scrollIntoView({
+      behavior: isStreaming || !newMsgAdded ? 'instant' : 'smooth',
+      block: 'end',
+    })
+  }, [messages, streamingText, isStreaming])
 
   return (
     <div className="message-list">
