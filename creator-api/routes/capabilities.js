@@ -5,6 +5,10 @@ export const capabilitiesRouter = Router()
 
 let router = null
 
+export function setModelRouter(r) {
+  router = r
+}
+
 function getRouter() {
   if (!router) {
     try {
@@ -38,6 +42,7 @@ capabilitiesRouter.get('/', (req, res) => {
       outputType: m.outputType,
       inputTypes: m.inputTypes,
       description: m.category,
+      fields: m.fields || [],
     }))
 
     res.json({

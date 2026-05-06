@@ -1,102 +1,153 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --color-background: hsl(240 15% 6%);
-  --color-foreground: hsl(210 40% 98%);
-  --color-card: hsl(240 15% 10%);
-  --color-card-foreground: hsl(210 40% 98%);
-  --color-popover: hsl(240 15% 10%);
-  --color-popover-foreground: hsl(210 40% 98%);
-  --color-primary: hsl(239 84% 67%);
-  --color-primary-foreground: hsl(210 40% 98%);
-  --color-secondary: hsl(240 15% 15%);
-  --color-secondary-foreground: hsl(210 40% 98%);
-  --color-muted: hsl(240 15% 15%);
-  --color-muted-foreground: hsl(215 20.2% 65.1%);
-  --color-accent: hsl(240 15% 15%);
-  --color-accent-foreground: hsl(210 40% 98%);
-  --color-destructive: hsl(0 62.8% 30.6%);
-  --color-destructive-foreground: hsl(210 40% 98%);
-  --color-border: hsl(240 15% 20%);
-  --color-input: hsl(240 15% 20%);
-  --color-ring: hsl(239 84% 67%);
-  --radius: 0.5rem;
+  --color-background: hsl(30 8% 4%);
+  --color-foreground: hsl(36 20% 90%);
+  --color-card: hsl(30 6% 7%);
+  --color-card-foreground: hsl(36 20% 90%);
+  --color-popover: hsl(30 6% 9%);
+  --color-popover-foreground: hsl(36 20% 90%);
+  --color-primary: hsl(41 60% 55%);
+  --color-primary-foreground: hsl(30 8% 4%);
+  --color-secondary: hsl(30 6% 12%);
+  --color-secondary-foreground: hsl(36 20% 90%);
+  --color-muted: hsl(30 6% 11%);
+  --color-muted-foreground: hsl(36 10% 55%);
+  --color-accent: hsl(41 60% 55%);
+  --color-accent-foreground: hsl(30 8% 4%);
+  --color-destructive: hsl(8 50% 42%);
+  --color-destructive-foreground: hsl(36 20% 90%);
+  --color-border: hsl(30 6% 14%);
+  --color-input: hsl(30 6% 14%);
+  --color-ring: hsl(41 60% 55%);
+  --radius: 0.625rem;
+  --font-sans: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-serif: 'Cormorant Garamond', Georgia, serif;
 }
 
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  margin: 0;
-  padding: 0;
+/* ==========================================
+   BASE LAYER
+   ========================================== */
+
+@layer base {
+  html {
+    background: hsl(30 8% 4%);
+  }
+
+  body {
+    font-family: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    margin: 0;
+    padding: 0;
+    background: hsl(30 8% 4%);
+    color: hsl(36 20% 90%);
+    line-height: 1.6;
+  }
+
+  #root {
+    min-height: 100dvh;
+  }
 }
 
-#root {
-  min-height: 100dvh;
+/* Subtle noise texture overlay */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 0.015;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 128px 128px;
 }
 
-.progress-steps {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  margin-top: 16px;
-  padding: 0 16px;
+/* ==========================================
+   TYPOGRAPHY UTILITIES
+   ========================================== */
+
+h1, h2, h3, h4 {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
 }
 
-.progress-step {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 6px 0;
-  opacity: 0.35;
-  transition: opacity 0.3s;
+.font-display {
+  font-family: 'Cormorant Garamond', Georgia, serif;
 }
 
-.progress-step.done {
-  opacity: 1;
+/* Thin gold rule */
+.gold-rule {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    hsl(41 60% 55% / 0.3) 20%,
+    hsl(41 60% 55% / 0.5) 50%,
+    hsl(41 60% 55% / 0.3) 80%,
+    transparent 100%
+  );
+  border: none;
 }
 
-.progress-step.active {
-  opacity: 1;
+/* Cinematic 16:9 aspect ratio box */
+.aspect-cinema {
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
 }
 
-.progress-step.failed {
-  opacity: 1;
+/* Film perforation border */
+.perf-border {
+  position: relative;
+}
+.perf-border::before {
+  content: '';
+  position: absolute;
+  left: -6px;
+  top: 8px;
+  bottom: 8px;
+  width: 3px;
+  background: repeating-linear-gradient(
+    to bottom,
+    hsl(30 8% 4%) 0px,
+    hsl(30 8% 4%) 4px,
+    transparent 4px,
+    transparent 10px
+  );
+  z-index: 2;
 }
 
-.step-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: hsl(240 15% 30%);
-  flex-shrink: 0;
-  transition: background 0.3s, box-shadow 0.3s;
+/* ==========================================
+   ANIMATIONS
+   ========================================== */
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
-.progress-step.done .step-dot {
-  background: hsl(150 60% 50%);
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
 }
 
-.progress-step.active .step-dot {
-  background: hsl(239 84% 67%);
-  box-shadow: 0 0 8px hsl(239 84% 67% / 0.5);
-  animation: pulse-dot 1.5s ease-in-out infinite;
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 6px hsl(41 60% 55% / 0.2); }
+  50%      { box-shadow: 0 0 18px hsl(41 60% 55% / 0.4); }
 }
 
-.progress-step.failed .step-dot {
-  background: hsl(0 70% 55%);
+@keyframes blink-cursor {
+  0%, 50%  { opacity: 1; }
+  51%, 100% { opacity: 0; }
 }
 
-.step-label {
-  font-size: 13px;
-  color: hsl(215 20.2% 65.1%);
+@keyframes reveal {
+  0%   { clip-path: inset(0 100% 0 0); }
+  100% { clip-path: inset(0 0 0 0); }
 }
 
-.progress-step.done .step-label,
-.progress-step.active .step-label {
-  color: hsl(210 40% 98%);
-}
-
-@keyframes pulse-dot {
-  0%, 100% { box-shadow: 0 0 4px hsl(239 84% 67% / 0.3); }
-  50% { box-shadow: 0 0 12px hsl(239 84% 67% / 0.7); }
+.animate-fade-up {
+  animation: fade-up 0.5s ease-out both;
 }

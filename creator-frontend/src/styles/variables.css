@@ -1,30 +1,46 @@
 :root {
-  --bg-primary: #0f0f1a;
-  --bg-secondary: #1a1a2e;
-  --bg-card: #2d2d44;
-  --bg-input: #1e1e32;
-  --text-primary: #e0e0e0;
-  --text-secondary: #888;
-  --text-muted: #666;
-  --accent: #6366f1;
-  --accent-light: #8b5cf6;
-  --accent-gradient: linear-gradient(135deg, #6366f1, #8b5cf6);
-  --success: #10b981;
-  --warning: #f59e0b;
-  --error: #ef4444;
-  --bubble-user: #6366f1;
-  --bubble-ai: #2d2d44;
-  --bubble-system: #1a1a2e;
+  --bg-primary: #0a0a08;
+  --bg-secondary: #11100e;
+  --bg-card: #181613;
+  --bg-input: #1c1a16;
+  --text-primary: #e8e0d5;
+  --text-secondary: #8a8278;
+  --text-muted: #5c5750;
+  --accent: #d4a853;
+  --accent-light: #e8c678;
+  --accent-glow: rgba(212, 168, 83, 0.2);
+  --accent-gradient: linear-gradient(135deg, #d4a853, #c9952e);
+  --success: #7b9c6e;
+  --warning: #d4a853;
+  --error: #c75b4a;
+  --bubble-user: #d4a853;
+  --bubble-user-text: #1a1814;
+  --bubble-ai: #181613;
+  --bubble-system: #11100e;
+  --radius-xs: 5px;
   --radius-sm: 8px;
   --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 20px;
-  --shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-  --font-sm: 12px;
-  --font-md: 14px;
-  --font-lg: 16px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
+  --shadow: 0 2px 16px rgba(0, 0, 0, 0.4);
+  --shadow-gold: 0 0 20px rgba(212, 168, 83, 0.08);
+  --font-xs: 11px;
+  --font-sm: 13px;
+  --font-md: 15px;
+  --font-lg: 18px;
+  --font-xl: 24px;
+  --font-display: 32px;
   --safe-bottom: env(safe-area-inset-bottom, 16px);
 }
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg-primary); color: var(--text-primary); -webkit-font-smoothing: antialiased; overflow: hidden; height: 100dvh; }
-#root { height: 100dvh; display: flex; flex-direction: column; }
+
+@layer base {
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    -webkit-font-smoothing: antialiased;
+    min-height: 100dvh;
+  }
+  #root { min-height: 100dvh; display: flex; flex-direction: column; }
+}

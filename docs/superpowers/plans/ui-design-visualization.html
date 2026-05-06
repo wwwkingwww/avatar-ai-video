@@ -1,0 +1,1216 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>创作页 UI 升级方案 — A+B+E 可视化</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Clash+Display:wght@500;600;700&family=Satoshi:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ===========================================
+   VIEWPORT FITTING: MANDATORY BASE
+   =========================================== */
+html, body { height: 100%; overflow-x: hidden; margin: 0; }
+html { scroll-snap-type: y mandatory; scroll-behavior: smooth; }
+.slide { width: 100vw; height: 100vh; height: 100dvh; overflow: hidden; scroll-snap-align: start; display: flex; flex-direction: column; position: relative; }
+.slide-content { flex: 1; display: flex; flex-direction: column; justify-content: center; max-height: 100%; overflow: hidden; padding: var(--slide-padding); }
+:root {
+  --title-size: clamp(1.5rem, 5vw, 4rem);
+  --h2-size: clamp(1.25rem, 3.5vw, 2.5rem);
+  --h3-size: clamp(1rem, 2.5vw, 1.75rem);
+  --body-size: clamp(0.75rem, 1.5vw, 1.125rem);
+  --small-size: clamp(0.65rem, 1vw, 0.875rem);
+  --slide-padding: clamp(1rem, 4vw, 4rem);
+  --content-gap: clamp(0.5rem, 2vw, 2rem);
+  --element-gap: clamp(0.25rem, 1vw, 1rem);
+}
+img, .image-container { max-width: 100%; max-height: min(50vh, 400px); object-fit: contain; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.2s !important; } html { scroll-behavior: auto; } }
+@media (max-height: 700px) { :root { --slide-padding: clamp(0.75rem, 3vw, 2rem); --content-gap: clamp(0.4rem, 1.5vw, 1rem); --title-size: clamp(1.25rem, 4.5vw, 2.5rem); --h2-size: clamp(1rem, 3vw, 1.75rem); } .nav-dots, .keyboard-hint { display: none; } }
+@media (max-height: 600px) { :root { --slide-padding: clamp(0.5rem, 2.5vw, 1.5rem); --content-gap: clamp(0.3rem, 1vw, 0.75rem); --title-size: clamp(1.1rem, 4vw, 2rem); --body-size: clamp(0.7rem, 1.2vw, 0.95rem); } }
+@media (max-height: 500px) { :root { --slide-padding: clamp(0.4rem, 2vw, 1rem); --title-size: clamp(1rem, 3.5vw, 1.5rem); --h2-size: clamp(0.9rem, 2.5vw, 1.25rem); --body-size: clamp(0.65rem, 1vw, 0.85rem); } }
+
+/* ===========================================
+   NEON CYBER THEME (adapted for UI mockups)
+   =========================================== */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #0a0e1a; color: #e2e8f0; font-family: 'Satoshi', sans-serif; }
+
+.slide { background: linear-gradient(135deg, #0a0e1a 0%, #0f1629 50%, #0a0f1f 100%); }
+.slide::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse at 70% 30%, rgba(6, 182, 212, 0.06) 0%, transparent 60%), radial-gradient(ellipse at 30% 70%, rgba(168, 85, 247, 0.05) 0%, transparent 60%); pointer-events: none; }
+
+.slide::after {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  background-image: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(6,182,212,0.015) 2px, rgba(6,182,212,0.015) 4px);
+  pointer-events: none; z-index: 0;
+}
+
+.slide-content { position: relative; z-index: 1; }
+
+/* Typography */
+h1 { font-family: 'Clash Display', sans-serif; font-size: var(--title-size); font-weight: 700; line-height: 1.1; background: linear-gradient(135deg, #06b6d4 0%, #a855f7 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+h2 { font-family: 'Clash Display', sans-serif; font-size: var(--h2-size); font-weight: 600; line-height: 1.2; color: #e2e8f0; }
+h3 { font-size: var(--h3-size); font-weight: 600; color: #06b6d4; }
+.tag { display: inline-block; padding: clamp(2px, 0.5vw, 4px) clamp(6px, 1vw, 12px); border-radius: 100px; font-size: var(--small-size); font-weight: 500; }
+.tag-cyan { background: rgba(6,182,212,0.15); color: #06b6d4; border: 1px solid rgba(6,182,212,0.25); }
+.tag-purple { background: rgba(168,85,247,0.15); color: #a855f7; border: 1px solid rgba(168,85,247,0.25); }
+.tag-green { background: rgba(16,185,129,0.15); color: #10b981; border: 1px solid rgba(16,185,129,0.25); }
+
+/* Navigation */
+.nav-dots { position: fixed; right: clamp(12px, 2vw, 24px); top: 50%; transform: translateY(-50%); z-index: 100; display: flex; flex-direction: column; gap: 10px; }
+.nav-dot { width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.2); cursor: pointer; transition: all 0.3s; }
+.nav-dot.active { background: #06b6d4; border-color: #06b6d4; box-shadow: 0 0 12px rgba(6,182,212,0.5); }
+.keyboard-hint { position: fixed; bottom: clamp(8px, 1.5vw, 16px); right: clamp(12px, 2vw, 24px); font-size: var(--small-size); color: rgba(255,255,255,0.25); z-index: 100; }
+
+/* Mockup Component Styles */
+.mockup-phone { background: #0f172a; border-radius: clamp(8px, 1.5vw, 16px); border: 1px solid rgba(255,255,255,0.08); overflow: hidden; box-shadow: 0 0 40px rgba(6,182,212,0.05); }
+.mockup-desktop { background: #0f172a; border-radius: clamp(6px, 1vw, 12px); border: 1px solid rgba(255,255,255,0.08); overflow: hidden; box-shadow: 0 0 30px rgba(168,85,247,0.04); }
+.mockup-header { background: rgba(255,255,255,0.03); border-bottom: 1px solid rgba(255,255,255,0.06); padding: clamp(4px, 0.7vw, 8px) clamp(6px, 1vw, 14px); display: flex; align-items: center; gap: 6px; }
+.mockup-dot { width: clamp(4px, 0.6vw, 8px); height: clamp(4px, 0.6vw, 8px); border-radius: 50%; }
+.mockup-dot.r { background: #ef4444; } .mockup-dot.y { background: #f59e0b; } .mockup-dot.g { background: #10b981; }
+.mockup-label { font-size: clamp(6px, 0.7vw, 10px); color: rgba(255,255,255,0.3); margin-left: 4px; }
+
+.ui-section { background: rgba(255,255,255,0.03); border-radius: clamp(3px, 0.5vw, 6px); border: 1px solid rgba(255,255,255,0.05); }
+.ui-text { font-size: clamp(6px, 0.7vw, 11px); color: rgba(255,255,255,0.5); }
+.ui-text-bright { color: rgba(255,255,255,0.8); }
+.ui-badge { font-size: clamp(5px, 0.6vw, 9px); padding: 2px 6px; border-radius: 4px; }
+.ui-badge.accent { background: rgba(99,102,241,0.2); color: #818cf8; }
+.ui-badge.success { background: rgba(16,185,129,0.2); color: #34d399; }
+.ui-badge.warn { background: rgba(245,158,11,0.2); color: #fbbf24; }
+.ui-input { background: rgba(255,255,255,0.05); border-radius: clamp(3px, 0.5vw, 6px); border: 1px solid rgba(255,255,255,0.08); padding: clamp(3px, 0.5vw, 6px) clamp(4px, 0.7vw, 10px); }
+.ui-btn { border-radius: 100px; padding: clamp(2px, 0.4vw, 5px) clamp(6px, 1vw, 12px); font-size: clamp(5px, 0.6vw, 10px); font-weight: 500; }
+.ui-btn.accent { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff; }
+.ui-btn.outline { border: 1px solid rgba(255,255,255,0.15); color: rgba(255,255,255,0.7); }
+
+.bubble-ui { background: #6366f1; color: #fff; border-radius: 10px 10px 2px 10px; padding: 4px 8px; font-size: clamp(5px, 0.6vw, 9px); }
+.bubble-ai { background: #2d2d44; color: #e0e0e0; border-radius: 10px 10px 10px 2px; padding: 4px 8px; font-size: clamp(5px, 0.6vw, 9px); }
+
+.progress-step { width: clamp(16px, 3vw, 32px); height: clamp(16px, 3vw, 32px); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: clamp(5px, 0.7vw, 10px); background: rgba(255,255,255,0.05); border: 2px solid rgba(255,255,255,0.1); }
+.progress-step.done { border-color: #10b981; background: rgba(16,185,129,0.1); color: #10b981; }
+.progress-step.active { border-color: #6366f1; background: rgba(99,102,241,0.1); color: #818cf8; animation: pulse-step 1.5s infinite; }
+.progress-step.error { border-color: #ef4444; background: rgba(239,68,68,0.1); color: #ef4444; }
+@keyframes pulse-step { 0%,100% { box-shadow: 0 0 8px rgba(99,102,241,0.3); } 50% { box-shadow: 0 0 16px rgba(99,102,241,0.6); } }
+
+.progress-connector { height: 2px; background: rgba(255,255,255,0.08); flex: 1; min-width: 8px; }
+.progress-connector.filled { background: #6366f1; }
+
+.progress-bar-track { height: clamp(3px, 0.4vw, 6px); border-radius: 3px; background: rgba(255,255,255,0.06); overflow: hidden; }
+.progress-bar-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, #6366f1, #a855f7); transition: width 0.6s; }
+
+/* Reveal animations */
+.slide-content > * { opacity: 0; transform: translateY(20px); transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+.slide.visible .slide-content > * { opacity: 1; transform: translateY(0); }
+.slide.visible .slide-content > *:nth-child(1) { transition-delay: 0.05s; }
+.slide.visible .slide-content > *:nth-child(2) { transition-delay: 0.15s; }
+.slide.visible .slide-content > *:nth-child(3) { transition-delay: 0.25s; }
+.slide.visible .slide-content > *:nth-child(4) { transition-delay: 0.35s; }
+.slide.visible .slide-content > *:nth-child(5) { transition-delay: 0.45s; }
+
+/* Arrows and annotations */
+.arrow-down { width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-top: 8px solid #a855f7; }
+.annotation { font-size: clamp(5px, 0.6vw, 9px); color: #fbbf24; font-weight: 500; }
+
+.layout-grid { display: grid; gap: clamp(4px, 0.8vw, 12px); }
+.layout-grid.cols2 { grid-template-columns: 1fr 1fr; }
+.layout-grid.cols3 { grid-template-columns: 1fr 1fr 1fr; }
+
+.divider { height: 1px; background: rgba(255,255,255,0.06); margin: var(--element-gap) 0; }
+
+.compare-wrapper { display: flex; gap: clamp(8px, 2vw, 24px); align-items: flex-start; justify-content: center; }
+.compare-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: var(--element-gap); }
+
+.label-bad { color: #ef4444; font-weight: 500; font-size: var(--small-size); }
+.label-good { color: #10b981; font-weight: 500; font-size: var(--small-size); }
+.label-arrow { color: #fbbf24; font-size: var(--small-size); font-weight: 600; }
+
+/* Glow decoration */
+.glow-orb { position: absolute; border-radius: 50%; filter: blur(60px); pointer-events: none; z-index: 0; }
+.glow-orb.cyan { background: rgba(6,182,212,0.08); width: 300px; height: 300px; right: -100px; top: -100px; }
+.glow-orb.purple { background: rgba(168,85,247,0.06); width: 250px; height: 250px; left: -80px; bottom: -80px; }
+</style>
+</head>
+<body>
+
+<!-- ====== NAVIGATION DOTS ====== -->
+<nav class="nav-dots" id="navDots"></nav>
+<div class="keyboard-hint">← → 或滚轮翻页</div>
+
+<!-- ===========================================
+     SLIDE 1: TITLE
+     =========================================== -->
+<section class="slide" id="s1">
+  <div class="glow-orb cyan"></div>
+  <div class="glow-orb purple"></div>
+  <div class="slide-content" style="align-items:center; text-align:center; gap:var(--content-gap);">
+    <div style="display:flex; gap:clamp(4px,1vw,8px); flex-wrap:wrap; justify-content:center;">
+      <span class="tag tag-cyan">方案 A · 统一路由</span>
+      <span class="tag tag-purple">方案 B · 桌面双栏</span>
+      <span class="tag tag-green">方案 E · 进度升级</span>
+    </div>
+    <h1>创作页 UI 升级方案</h1>
+    <p style="font-size:var(--body-size); color:rgba(255,255,255,0.45); max-width:600px;">
+      参考 Canva AI · RunwayML · Synthesia 等业界最佳实践<br>
+      10 文件改动 · 22 原子任务 · 约 2 小时实施
+    </p>
+    <div style="display:flex; gap:clamp(4px,1vw,8px); margin-top:clamp(4px,1vw,8px);">
+      <span class="ui-btn accent" style="font-size:var(--body-size); padding:6px 20px;">视觉预览 →</span>
+      <span style="font-size:var(--small-size); color:rgba(255,255,255,0.25); align-self:center;">共 11 页</span>
+    </div>
+  </div>
+</section>
+
+<!-- ===========================================
+     SLIDE 2: OVERVIEW — THREE SOLUTIONS
+     =========================================== -->
+<section class="slide" id="s2">
+  <div class="slide-content" style="gap:var(--content-gap);">
+    <h2>三方案总览</h2>
+    <p style="font-size:var(--body-size); color:rgba(255,255,255,0.45);">改动集中于 creator-frontend，不影响后端 API</p>
+    
+    <div class="layout-grid cols3" style="margin-top:clamp(4px,1vw,8px);">
+      <!-- A card -->
+      <div class="ui-section" style="padding:clamp(8px,1.5vw,20px); display:flex; flex-direction:column; gap:clamp(4px,0.7vw,10px);">
+        <span class="tag tag-cyan" style="width:fit-content;">A · 统一路由</span>
+        <h3 style="font-size:clamp(0.8rem,1.8vw,1.3rem);">React Router</h3>
+        <p style="font-size:var(--small-size); color:rgba(255,255,255,0.4);">
+          告别 window.location 全页刷新<br>
+          浏览器前进/后退 | 可分享链接<br>
+          / ↔ /dashboard 无缝切换
+        </p>
+        <div style="font-size:var(--small-size); color:#06b6d4;">📦 react-router-dom v6</div>
+      </div>
+
+      <!-- B card -->
+      <div class="ui-section" style="padding:clamp(8px,1.5vw,20px); display:flex; flex-direction:column; gap:clamp(4px,0.7vw,10px);">
+        <span class="tag tag-purple" style="width:fit-content;">B · 桌面双栏</span>
+        <h3 style="font-size:clamp(0.8rem,1.8vw,1.3rem);">Canva AI 风格</h3>
+        <p style="font-size:var(--small-size); color:rgba(255,255,255,0.4);">
+          手机竖排 | 桌面左对话右预览<br>
+          预览面板始终可见，无需折叠<br>
+          参考 Canva AI / Fliki 布局
+        </p>
+        <div style="font-size:var(--small-size); color:#a855f7;">📐 lg:flex-row @1024px</div>
+      </div>
+
+      <!-- E card -->
+      <div class="ui-section" style="padding:clamp(8px,1.5vw,20px); display:flex; flex-direction:column; gap:clamp(4px,0.7vw,10px);">
+        <span class="tag tag-green" style="width:fit-content;">E · 进度升级</span>
+        <h3 style="font-size:clamp(0.8rem,1.8vw,1.3rem);">RunwayML 风格</h3>
+        <p style="font-size:var(--small-size); color:rgba(255,255,255,0.4);">
+          百分比进度 + 预估时间<br>
+          &lt;video&gt; 内联播放 | 失败重试<br>
+          平台发布动画 | 平滑过渡
+        </p>
+        <div style="font-size:var(--small-size); color:#10b981;">🎬 ProgressCard 重写</div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div style="display:flex; gap:clamp(8px,2vw,20px); justify-content:center; flex-wrap:wrap;">
+      <div style="font-size:var(--small-size); color:rgba(255,255,255,0.3);">📁 改动文件：<span style="color:#06b6d4;">10</span> 个</div>
+      <div style="font-size:var(--small-size); color:rgba(255,255,255,0.3);">🆕 新建文件：<span style="color:#a855f7;">2</span> 个</div>
+      <div style="font-size:var(--small-size); color:rgba(255,255,255,0.3);">📝 原子任务：<span style="color:#10b981;">22</span> 个</div>
+      <div style="font-size:var(--small-size); color:rgba(255,255,255,0.3);">⏱ 预估耗时：<span style="color:#fbbf24;">2</span> 小时</div>
+    </div>
+  </div>
+</section>
+
+<!-- ===========================================
+     SLIDE 3: CURRENT STATE vs PROPOSED (方案 A+B)
+     =========================================== -->
+<section class="slide" id="s3">
+  <div class="slide-content" style="gap:var(--content-gap);">
+    <h2>方案 A+B 前后对比：布局架构</h2>
+    
+    <div class="compare-wrapper" style="align-items:stretch;">
+      <!-- BEFORE -->
+      <div class="compare-col" style="align-items:center;">
+        <span class="label-bad">❌ 实施前</span>
+        <div class="mockup-desktop" style="width:clamp(260px,38vw,440px); height:clamp(200px,38vh,360px); display:flex; flex-direction:column;">
+          <div class="mockup-header">
+            <div class="mockup-dot r"></div><div class="mockup-dot y"></div><div class="mockup-dot g"></div>
+            <span class="mockup-label">creator-app — max-width:520px 居中</span>
+          </div>
+          <div style="flex:1; display:flex; flex-direction:column; align-items:center; padding:clamp(4px,0.8vw,10px); gap:clamp(3px,0.5vw,6px); overflow:hidden;">
+            <!-- ChatBar -->
+            <div class="ui-input" style="width:90%; display:flex; gap:4px; align-items:center;">
+              <span class="ui-text" style="color:#818cf8;">💬 AI创作</span>
+              <span class="ui-text" style="font-size:clamp(4px,0.5vw,7px);">[口播][评测][Vlog]</span>
+              <span style="flex:1;"></span>
+              <span class="ui-btn accent" style="font-size:clamp(4px,0.5vw,7px);">创建</span>
+            </div>
+            <!-- PreviewPanel -->
+            <div class="ui-section" style="width:90%; padding:6px 8px;">
+              <div style="display:flex; justify-content:space-between;"><span class="ui-text">🎬 视频创作预览</span><span class="ui-text">▲</span></div>
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:3px; margin-top:3px;">
+                <div class="ui-input"><span class="ui-text">📋 模板: 口播 ✓</span></div>
+                <div class="ui-input"><span class="ui-text">📱 平台: 抖音快手 ✓</span></div>
+                <div class="ui-input"><span class="ui-text">📷 素材: 3个文件 ✓</span></div>
+                <div class="ui-input"><span class="ui-text">📝 文案: 你好xxx... ✓</span></div>
+              </div>
+            </div>
+            <!-- dots -->
+            <div style="display:flex; gap:4px; align-items:center;">
+              <div class="progress-step done">✓</div><div class="progress-step active">2</div><div class="progress-step">3</div>
+              <span class="ui-text">确认参数</span>
+            </div>
+            <!-- chat bubbles -->
+            <div style="width:85%; display:flex; flex-direction:column; gap:4px; align-items:flex-start;">
+              <div class="bubble-ai" style="max-width:80%;">好的！我了解到你想做一个口播视频…</div>
+            </div>
+            <div style="width:85%; display:flex; justify-content:flex-end;">
+              <div class="bubble-ui" style="max-width:70%;">帮我生成一段xxx视频</div>
+            </div>
+            <div style="width:85%; display:flex; gap:3px; flex-wrap:wrap;">
+              <span class="ui-btn outline" style="font-size:clamp(4px,0.5vw,7px);">口播</span>
+              <span class="ui-btn outline" style="font-size:clamp(4px,0.5vw,7px);">抖音</span>
+              <span class="ui-btn accent" style="font-size:clamp(4px,0.5vw,7px);">确认</span>
+            </div>
+            <!-- input -->
+            <div class="ui-input" style="width:90%; display:flex; gap:4px; align-items:center;">
+              <span class="ui-text" style="flex:1; color:rgba(255,255,255,0.2);">描述你想做什么视频...</span>
+              <span style="width:14px;height:14px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);"></span>
+            </div>
+          </div>
+        </div>
+        <div class="annotation">固定 520px 居中<br>桌面端大量留白浪费</div>
+      </div>
+
+      <!-- ARROW -->
+      <div style="display:flex; align-items:center;">
+        <span class="label-arrow" style="font-size:clamp(1rem,2vw,2rem);">→</span>
+      </div>
+
+      <!-- AFTER -->
+      <div class="compare-col" style="align-items:center;">
+        <span class="label-good">✅ 实施后（桌面端 ≥1024px）</span>
+        <div class="mockup-desktop" style="width:clamp(260px,38vw,440px); height:clamp(200px,38vh,360px); display:flex;">
+          <!-- Left panel 60% -->
+          <div style="flex:6; display:flex; flex-direction:column; border-right:1px solid rgba(255,255,255,0.06);">
+            <div class="ui-input" style="display:flex; gap:4px; align-items:center; padding:4px 8px;">
+              <span class="ui-text" style="color:#818cf8;">💬 AI创作</span>
+              <span class="ui-text" style="font-size:clamp(4px,0.5vw,7px);">[口播][评测][Vlog]</span>
+              <span style="flex:1;"></span>
+              <span class="ui-btn accent" style="font-size:clamp(4px,0.5vw,7px);">创建</span>
+              <span class="ui-btn outline" style="font-size:clamp(4px,0.5vw,7px);">管理后台</span>
+            </div>
+            <div style="flex:1; overflow:hidden; padding:6px; display:flex; flex-direction:column; gap:4px;">
+              <div class="bubble-ai" style="max-width:85%;">好的！我了解到你想做一个口播视频…</div>
+              <div style="display:flex; justify-content:flex-end;"><div class="bubble-ui" style="max-width:70%;">帮我生成一段xxx视频</div></div>
+              <div style="display:flex; gap:3px; flex-wrap:wrap;">
+                <span class="ui-btn outline" style="font-size:clamp(4px,0.5vw,7px);">口播</span>
+                <span class="ui-btn accent" style="font-size:clamp(4px,0.5vw,7px);">确认</span>
+              </div>
+            </div>
+            <div class="ui-input" style="display:flex; gap:4px; align-items:center; padding:4px 8px;">
+              <span class="ui-text" style="flex:1; color:rgba(255,255,255,0.2);">描述你想做什么视频...</span>
+              <span style="width:14px;height:14px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);"></span>
+            </div>
+          </div>
+          <!-- Right panel 40% -->
+          <div style="flex:4; display:flex; flex-direction:column; padding:clamp(3px,0.6vw,8px); gap:clamp(2px,0.4vw,6px); overflow:hidden;">
+            <div class="ui-text" style="font-weight:600; padding-left:4px;">🎬 视频创作预览</div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:3px;">
+              <div class="ui-input" style="border-color:rgba(99,102,241,0.2);"><span class="ui-text">📋 模板</span><br><span class="ui-text-bright">口播 ✓</span></div>
+              <div class="ui-input" style="border-color:rgba(99,102,241,0.2);"><span class="ui-text">📱 平台</span><br><span class="ui-text-bright">抖音、快手 ✓</span></div>
+              <div class="ui-input" style="border-color:rgba(99,102,241,0.2);"><span class="ui-text">📷 素材</span><br><span class="ui-text-bright">3个文件 ✓</span></div>
+              <div class="ui-input" style="border-color:rgba(99,102,241,0.2);"><span class="ui-text">📝 文案</span><br><span class="ui-text-bright">你好... ✓</span></div>
+            </div>
+            <div style="display:flex; gap:4px; align-items:center; justify-content:center;">
+              <div class="progress-step done">✓</div><div class="progress-step active">2</div><div class="progress-step">3</div>
+              <span class="ui-text">确认参数</span>
+            </div>
+            <div style="font-size:clamp(5px,0.6vw,8px); color:rgba(255,255,255,0.2); text-align:center;">进度将在此处显示</div>
+          </div>
+        </div>
+        <div class="annotation" style="color:#10b981;">左栏对话 60% + 右栏预览 40%<br>预览始终可见 · 参考 Canva AI</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===========================================
+     SLIDE 4: RESPONSIVE BREAKPOINTS (方案 B detail)
+     =========================================== -->
+<section class="slide" id="s4">
+  <div class="slide-content" style="gap:var(--content-gap);">
+    <h2>方案 B 细节：响应式三态</h2>
+    <p style="font-size:var(--body-size); color:rgba(255,255,255,0.45);">一个 ChatView 组件，三种布局模式</p>
+
+    <div class="layout-grid cols3" style="align-items:start;">
+      <!-- Mobile -->
+      <div style="display:flex; flex-direction:column; gap:clamp(3px,0.5vw,6px);">
+        <div style="display:flex; gap:4px; align-items:center;"><span class="tag tag-cyan">📱 &lt;640px</span><span class="ui-text">手机</span></div>
+        <div class="mockup-phone" style="width:clamp(120px,20vw,180px); height:clamp(180px,28vh,280px); display:flex; flex-direction:column; margin:0 auto;">
+          <div style="font-size:clamp(4px,0.5vw,7px); color:rgba(255,255,255,0.2); text-align:center; padding:4px;">ChatBar</div>
+          <div class="ui-section" style="margin:0 4px; padding:3px 5px;"><span class="ui-text">🎬 预览面板</span></div>
+          <div style="display:flex; gap:2px; justify-content:center; padding:2px;"><div class="progress-step" style="font-size:6px;">1</div><div class="progress-step active" style="font-size:6px;">2</div><div class="progress-step" style="font-size:6px;">3</div></div>
+          <div style="flex:1; padding:4px; display:flex; flex-direction:column; gap:3px;">
+            <div class="bubble-ai" style="font-size:clamp(4px,0.5vw,6px);">AI 回复…</div>
+            <div style="display:flex; justify-content:flex-end;"><div class="bubble-ui" style="font-size:clamp(4px,0.5vw,6px);">用户消息</div></div>
+          </div>
+          <div class="ui-input" style="margin:3px; padding:3px 5px;"><span class="ui-text" style="font-size:clamp(4px,0.5vw,6px);">输入...</span></div>
+        </div>
+        <span class="annotation">单栏竖排<br>预览在上，对话在下</span>
+      </div>
+
+      <!-- Tablet -->
+      <div style="display:flex; flex-direction:column; gap:clamp(3px,0.5vw,6px);">
+        <div style="display:flex; gap:4px; align-items:center;"><span class="tag tag-purple">📲 640-1024px</span><span class="ui-text">平板</span></div>
+        <div class="mockup-phone" style="width:clamp(120px,20vw,180px); height:clamp(180px,28vh,280px); display:flex; flex-direction:column; margin:0 auto;">
+          <div style="font-size:clamp(4px,0.5vw,7px); color:rgba(255,255,255,0.2); text-align:center; padding:4px;">ChatBar</div>
+          <div class="ui-section" style="margin:0 4px; padding:3px 5px;"><span class="ui-text">🎬 预览面板</span></div>
+          <div style="display:flex; gap:2px; justify-content:center; padding:2px;"><div class="progress-step" style="font-size:6px;">1</div><div class="progress-step active" style="font-size:6px;">2</div><div class="progress-step" style="font-size:6px;">3</div></div>
+          <div style="flex:1; padding:4px; display:flex; flex-direction:column; gap:3px;">
+            <div class="bubble-ai" style="font-size:clamp(4px,0.5vw,6px);">AI 回复…</div>
+            <div style="display:flex; justify-content:flex-end;"><div class="bubble-ui" style="font-size:clamp(4px,0.5vw,6px);">用户消息</div></div>
+          </div>
+          <div class="ui-input" style="margin:3px; padding:3px 5px;"><span class="ui-text" style="font-size:clamp(4px,0.5vw,6px);">输入...</span></div>
+        </div>
+        <span class="annotation">同手机布局<br>预览面板仍可折叠</span>
+      </div>
+
+      <!-- Desktop -->
+      <div style="display:flex; flex-direction:column; gap:clamp(3px,0.5vw,6px);">
+        <div style="display:flex; gap:4px; align-items:center;"><span class="tag tag-green">🖥 ≥1024px</span><span class="ui-text">桌面</span></div>
+        <div class="mockup-phone" style="width:clamp(180px,28vw,300px); height:clamp(180px,28vh,280px); display:flex; margin:0 auto; border-radius:clamp(4px,0.8vw,8px);">
+          <div style="flex:6; display:flex; flex-direction:column; border-right:1px solid rgba(255,255,255,0.05);">
+            <div style="font-size:clamp(4px,0.5vw,7px); color:rgba(255,255,255,0.2); text-align:center; padding:3px;">ChatBar</div>
+            <div style="flex:1; padding:3px; display:flex; flex-direction:column; gap:3px;">
+              <div class="bubble-ai" style="font-size:clamp(4px,0.5vw,6px);">AI 回复…</div>
+              <div style="display:flex; justify-content:flex-end;"><div class="bubble-ui" style="font-size:clamp(4px,0.5vw,6px);">用户消息</div></div>
+            </div>
+            <div class="ui-input" style="margin:2px; padding:2px 4px;"><span class="ui-text" style="font-size:clamp(4px,0.5vw,6px);">输入...</span></div>
+          </div>
+          <div style="flex:4; padding:4px; display:flex; flex-direction:column; gap:3px;">
+            <div class="ui-text" style="font-weight:600;">🎬 预览</div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:2px;">
+              <div class="ui-input" style="padding:2px;"><span style="font-size:clamp(3px,0.4vw,5px);">📋 模板 ✓</span></div>
+              <div class="ui-input" style="padding:2px;"><span style="font-size:clamp(3px,0.4vw,5px);">📱 平台 ✓</span></div>
+            </div>
+            <div style="display:flex; gap:2px; justify-content:center;">
+              <div class="progress-step" style="font-size:5px;width:16px;height:16px;">1</div>
+              <div class="progress-step active" style="font-size:5px;width:16px;height:16px;">2</div>
+              <div class="progress-step" style="font-size:5px;width:16px;height:16px;">3</div>
+            </div>
+          </div>
+        </div>
+        <span class="annotation" style="color:#10b981;">左对话 + 右预览双栏<br>预览始终可见 · 不折叠</span>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+    <div style="background:rgba(6,182,212,0.05); border:1px solid rgba(6,182,212,0.1); border-radius:8px; padding:clamp(4px,0.8vw,12px);">
+      <span style="font-size:var(--small-size); color:#06b6d4;">💡 实现方式</span>
+      <span class="ui-text">: CSS media query @1024px, chat-view flex-direction: row, chat-sidebar display: flex (lg 以上)</span>
+    </div>
+  </div>
+</section>
+
+<!-- ===========================================
+     SLIDE 5: PROGRESS CARD BEFORE/AFTER (方案 E)
+     =========================================== -->
+<section class="slide" id="s5">
+  <div class="slide-content" style="gap:var(--content-gap);">
+    <h2>方案 E：进度卡片可视化升级</h2>
+
+    <div class="compare-wrapper" style="align-items:stretch;">
+      <!-- BEFORE -->
+      <div class="compare-col" style="align-items:center;">
+        <span class="label-bad">❌ 实施前</span>
+        <div class="mockup-desktop" style="width:clamp(180px,26vw,300px); height:clamp(220px,36vh,340px); display:flex; flex-direction:column; padding:clamp(4px,0.8vw,10px); gap:clamp(3px,0.5vw,8px);">
+          <div style="display:flex; justify-content:space-between;"><span class="ui-text-bright">任务进度</span><span class="ui-text">⏱ 1分23秒</span></div>
+          <!-- Pipeline steps only -->
+          <div style="display:flex; align-items:center; gap:0; justify-content:space-between;">
+            <div class="progress-step done">📋</div><div class="progress-connector filled"></div>
+            <div class="progress-step active">🎬</div><div class="progress-connector"></div>
+            <div class="progress-step">✅</div><div class="progress-connector"></div>
+            <div class="progress-step">📤</div><div class="progress-connector"></div>
+            <div class="progress-step">🎉</div>
+          </div>
+          <span style="font-size:clamp(5px,0.6vw,8px); color:rgba(255,255,255,0.2); text-align:center;">← 仅步骤指示器，无百分比</span>
+
+          <!-- Step card simple -->
+          <div class="ui-section" style="padding:clamp(3px,0.5vw,6px); border-left:2px solid #6366f1;">
+            <div style="display:flex; gap:4px; align-items:center;"><span>🎬</span><span class="ui-text-bright">生成中</span></div>
+            <span class="ui-text" style="font-size:clamp(4px,0.5vw,7px);">提示词: xxx...</span>
+            <span class="ui-text" style="font-size:clamp(4px,0.5vw,7px);">模型: happyhorse-1.0</span>
+          </div>
+          <div class="ui-section" style="padding:clamp(3px,0.5vw,6px); opacity:0.4;">
+            <div style="display:flex; gap:4px;"><span>✅</span><span class="ui-text">已生成</span></div>
+            <span class="ui-text" style="font-size:clamp(4px,0.5vw,7px);">等待生成完成…</span>
+          </div>
+          <div class="ui-section" style="padding:clamp(3px,0.5vw,6px); opacity:0.4;">
+            <div style="display:flex; gap:4px;"><span>📤</span><span class="ui-text">发布中</span></div>
+            <span class="ui-text" style="font-size:clamp(4px,0.5vw,7px);">等待平台配置…</span>
+          </div>
+          <span class="ui-text" style="font-size:clamp(4px,0.5vw,7px); color:#ef4444; text-align:center;">失败仅显示红字，无重试</span>
+        </div>
+      </div>
+
+      <!-- ARROW -->
+      <div style="display:flex; align-items:center;">
+        <span class="label-arrow" style="font-size:clamp(1rem,2vw,2rem);">→</span>
+      </div>
+
+      <!-- AFTER -->
+      <div class="compare-col" style="align-items:center;">
+        <span class="label-good">✅ 实施后</span>
+        <div class="mockup-desktop" style="width:clamp(180px,26vw,300px); height:clamp(220px,36vh,340px); display:flex; flex-direction:column; padding:clamp(4px,0.8vw,10px); gap:clamp(3px,0.5vw,8px);">
+          <div style="display:flex; justify-content:space-between;"><span class="ui-text-bright">任务进度</span><span class="ui-text">⏱ 1分23秒</span></div>
+          <!-- Progress bar -->
+          <div style="display:flex; gap:6px; align-items:center;">
+            <div class="progress-bar-track" style="flex:1;">
+              <div class="progress-bar-fill" style="width:45%;"></div>
+            </div>
+            <span style="font-size:clamp(5px,0.7vw,10px); color:#818cf8; font-weight:600;">45%</span>
+          </div>
+          <!-- Estimated time -->
+          <div style="font-size:clamp(5px,0.6vw,8px); color:rgba(255,255,255,0.3); text-align:center;">⏱ 预计剩余 1 分 15 秒</div>
+          <!-- Pipeline -->
+          <div style="display:flex; align-items:center; gap:0; justify-content:space-between;">
+            <div class="progress-step done">📋</div><div class="progress-connector filled"></div>
+            <div class="progress-step active">🎬</div><div class="progress-connector"></div>
+            <div class="progress-step">✅</div><div class="progress-connector"></div>
+            <div class="progress-step">📤</div><div class="progress-connector"></div>
+            <div class="progress-step">🎉</div>
+          </div>
+
+          <!-- Generated with video -->
+          <div class="ui-section" style="padding:clamp(3px,0.5vw,6px); border-left:2px solid #10b981;">
+            <div style="display:flex; gap:4px;"><span>✅</span><span class="ui-text-bright">已生成</span></div>
+            <div style="background:#000; height:clamp(30px,6vh,50px); margin:4px 0; display:flex; align-items:center; justify-content:center; border-radius:4px;">
+              <span style="font-size:clamp(6px,0.8vw,14px);">▶</span>
+            </div>
+            <span style="font-size:clamp(4px,0.5vw,7px); color:#06b6d4;">查看视频 →</span>
+          </div>
+
+          <!-- Failed + retry -->
+          <div class="ui-section" style="padding:clamp(3px,0.5vw,6px); border-left:2px solid #ef4444;">
+            <div style="display:flex; gap:4px;"><span>🎬</span><span class="ui-text-bright">生成中</span></div>
+            <span style="font-size:clamp(4px,0.5vw,7px); color:#ef4444;">❌ API 超时</span>
+            <span class="ui-btn accent" style="font-size:clamp(4px,0.5vw,7px); display:inline-block; margin-top:3px;">🔄 重试</span>
+          </div>
+        </div>
+        <div class="annotation" style="color:#10b981;">+ 百分比进度条 + 预估时间<br>+ video 播放器 + 重试按钮</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===========================================
+     SLIDE 6: ROUTE ARCHITECTURE (方案 A detail)
+     =========================================== -->
+<section class="slide" id="s6">
+  <div class="slide-content" style="gap:var(--content-gap);">
+    <h2>方案 A 细节：路由架构变更</h2>
+
+    <div class="compare-wrapper" style="align-items:stretch;">
+      <div class="compare-col" style="align-items:center;">
+        <span class="label-bad">❌ 实施前：双入口 + 全页刷新</span>
+        <div style="background:rgba(255,255,255,0.02); border-radius:8px; padding:clamp(6px,1vw,16px); width:100%; font-family:monospace; font-size:clamp(5px,0.7vw,10px); line-height:1.6;">
+          main.tsx<br>
+          └─ App.tsx (创作页)<br>
+          &nbsp;&nbsp;&nbsp;└─ window.location.href='/'<br>
+          <br>
+          独立入口<br>
+          └─ Dashboard.tsx (后台)<br>
+          &nbsp;&nbsp;&nbsp;└─ window.location.href='/'<br>
+          <br>
+          <span style="color:#ef4444;">⚠ 全页刷新跳转<br>⚠ 无法浏览器前进/后退<br>⚠ 无法分享具体链接</span>
+        </div>
+      </div>
+
+      <div class="compare-col" style="align-items:center;">
+        <span class="label-good">✅ 实施后：React Router 统一入口</span>
+        <div style="background:rgba(255,255,255,0.02); border-radius:8px; padding:clamp(6px,1vw,16px); width:100%; font-family:monospace; font-size:clamp(5px,0.7vw,10px); line-height:1.6;">
+          main.tsx<br>
+          └─ RouterProvider<br>
+          &nbsp;&nbsp;&nbsp;├─ / → CreatorPage<br>
+          &nbsp;&nbsp;&nbsp;└─ /dashboard/:view?<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└─ Dashboard<br>
+          <br>
+          <span style="color:#10b981;">✓ &lt;Link&gt; 无刷新导航<br>✓ 浏览器前进/后退<br>✓ 可分享 URL</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:clamp(8px,1.5vw,16px);">
+      <div class="ui-section" style="padding:clamp(6px,1vw,14px);">
+        <h3 style="font-size:clamp(0.7rem,1.4vw,1.1rem);">📁 新建文件</h3>
+        <span class="ui-text" style="font-family:monospace; display:block; margin-top:4px;">src/router.tsx</span>
+        <span class="ui-text" style="font-family:monospace; display:block;">src/pages/CreatorPage.tsx</span>
+      </div>
+      <div class="ui-section" style="padding:clamp(6px,1vw,14px);">
+        <h3 style="font-size:clamp(0.7rem,1.4vw,1.1rem);">✏️ 修改文件</h3>
+        <span class="ui-text" style="font-family:monospace; display:block; margin-top:4px;">src/main.tsx</span>
+        <span class="ui-text" style="font-family:monospace; display:block;">src/App.tsx</span>
+        <span class="ui-text" style="font-family:monospace; display:block;">src/pages/Dashboard.tsx</span>
+        <span class="ui-text" style="font-family:monospace; display:block;">src/components/layout/Sidebar.tsx</span>
+        <span class="ui-text" style="font-family:monospace; display:block;">src/components/ChatBar.tsx</span>
+      </div>
+    </div>
+
+    <div style="display:flex; gap:clamp(6px,1vw,12px); justify-content:center;">
+      <span class="tag tag-cyan">npm install react-router-dom@6</span>
+      <span class="tag tag-purple">BrowserRouter → RouterProvider</span>
+      <span class="tag tag-green">window.location → &lt;Link&gt;</span>
+    </div>
+  </div>
+</section>
+
+<!-- ===========================================
+     SLIDE 7: CHAT DIALOG DESIGN — BEFORE/AFTER
+     =========================================== -->
+<section class="slide" id="s7">
+  <div class="slide-content" style="gap:var(--content-gap);">
+    <h2>对话区设计细节：Bubble · QuickOptions · InputArea</h2>
+    <p style="font-size:var(--body-size); color:rgba(255,255,255,0.45);">聊天气泡 / 快捷选项 / 输入区域的深度对比</p>
+
+    <div class="compare-wrapper" style="align-items:stretch;">
+      <!-- BEFORE -->
+      <div class="compare-col" style="align-items:center;">
+        <span class="label-bad">❌ 当前</span>
+        <div class="mockup-desktop" style="width:clamp(200px,30vw,360px); height:clamp(250px,42vh,400px); display:flex; flex-direction:column; overflow:hidden;">
+          <!-- ChatBar -->
+          <div class="ui-input" style="display:flex; gap:4px; align-items:center; padding:5px 8px; margin:4px; border-radius:6px;">
+            <span class="ui-text" style="color:#818cf8; font-size:clamp(5px,0.6vw,8px);">💬 AI创作</span>
+            <span class="ui-text" style="font-size:clamp(4px,0.5vw,7px);">[口播][评测][展示][Vlog]</span>
+            <span style="flex:1;"></span>
+            <span class="ui-btn accent" style="font-size:clamp(4px,0.5vw,7px);">创建</span>
+            <span class="ui-btn outline" style="font-size:clamp(4px,0.5vw,7px); background:rgba(255,255,255,0.03);">展开</span>
+          </div>
+          <!-- messages -->
+          <div style="flex:1; padding:6px 8px; display:flex; flex-direction:column; gap:5px; overflow-y:auto;">
+            <!-- assistant bubble -->
+            <div style="display:flex; flex-direction:column; max-width:85%; align-self:flex-start; gap:2px;">
+              <div class="bubble-ai" style="font-size:clamp(5px,0.6vw,9px);">你好！我是 AI 创作助手 👋 想做什么类型的视频？</div>
+              <div style="display:flex; flex-wrap:wrap; gap:3px; padding:3px 0;">
+                <span class="ui-btn outline" style="font-size:clamp(4px,0.5vw,7px); background:rgba(255,255,255,0.03); border:1px solid rgba(99,102,241,0.3); color:#818cf8;">口播</span>
+                <span class="ui-btn outline" style="font-size:clamp(4px,0.5vw,7px); background:rgba(255,255,255,0.03); border:1px solid rgba(99,102,241,0.3); color:#818cf8;">评测</span>
+                <span class="ui-btn outline" style="font-size:clamp(4px,0.5vw,7px); background:rgba(255,255,255,0.03); border:1px solid rgba(99,102,241,0.3); color:#818cf8;">展示</span>
+                <span class="ui-btn outline" style="font-size:clamp(4px,0.5vw,7px); background:rgba(255,255,255,0.03); border:1px solid rgba(99,102,241,0.3); color:#818cf8;">Vlog</span>
+              </div>
+            </div>
+            <!-- user bubble -->
+            <div style="display:flex; justify-content:flex-end;">
+              <div class="bubble-ui" style="font-size:clamp(5px,0.6vw,9px);">口播</div>
+            </div>
+            <!-- assistant bubble -->
+            <div style="display:flex; flex-direction:column; max-width:85%; align-self:flex-start; gap:2px;">
+              <div class="bubble-ai" style="font-size:clamp(5px,0.6vw,9px);">好的！要在哪些平台发布？选多个也可以</div>
+              <div style="display:flex; flex-wrap:wrap; gap:3px; padding:3px 0;">
+                <span class="ui-btn outline" style="font-size:clamp(4px,0.5vw,7px); border-color:rgba(99,102,241,0.3); color:#818cf8;">✓ 抖音</span>
+                <span class="ui-btn outline" style="font-size:clamp(4px,0.5vw,7px); background:rgba(255,255,255,0.03); border-color:rgba(99,102,241,0.3); color:#818cf8;">✓ 快手</span>
+                <span class="ui-btn accent" style="font-size:clamp(4px,0.5vw,7px);">确认选择</span>
+              </div>
+            </div>
+            <!-- user bubble -->
+            <div style="display:flex; justify-content:flex-end;">
+              <div class="bubble-ui" style="font-size:clamp(5px,0.6vw,9px);">抖音、快手</div>
+            </div>
+            <!-- system bubble -->
+            <div style="display:flex; justify-content:center;">
+              <div style="font-size:clamp(4px,0.5vw,7px); color:rgba(255,255,255,0.25); text-align:center; padding:4px 8px; border-radius:6px; background:rgba(255,255,255,0.02); max-width:90%;">
+                ⏳ 还差：素材或文案、文案
+              </div>
+            </div>
+          </div>
+          <!-- input -->
+          <div class="ui-input" style="display:flex; gap:4px; align-items:center; padding:5px 8px; margin:4px; border-radius:6px;">
+            <span class="ui-text" style="flex:1; color:rgba(255,255,255,0.12); font-size:clamp(5px,0.6vw,8px);">描述你想做什么视频...</span>
+            <span style="width:clamp(14px,2vw,26px);height:clamp(14px,2vw,26px);border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:clamp(6px,0.7vw,10px);">➤</span>
+          </div>
+        </div>
+        <div class="annotation" style="font-size:clamp(5px,0.6vw,8px);">
+          模板选择：胶囊按钮·颜色暗淡<br>
+          快捷选项：仅文字·无图标·无 hover 动效<br>
+          输入区：纯文本 placeholder·附件图标 📎
+        </div>
+      </div>
+
+      <!-- AFTER -->
+      <div class="compare-col" style="align-items:center;">
+        <span class="label-good">✅ 升级后</span>
+        <div class="mockup-desktop" style="width:clamp(200px,30vw,360px); height:clamp(250px,42vh,400px); display:flex; flex-direction:column; overflow:hidden;">
+          <!-- ChatBar upgraded -->
+          <div style="display:flex; gap:4px; align-items:center; padding:6px 10px; margin:4px; border:1px solid rgba(99,102,241,0.08); border-radius:8px; background:rgba(99,102,241,0.03);">
+            <span style="font-size:clamp(6px,0.7vw,10px);">⚡</span>
+            <span style="font-size:clamp(6px,0.7vw,10px); color:#818cf8; font-weight:600;">AI 创作</span>
+            <div style="flex:1;"></div>
+            <div style="display:flex; gap:3px;">
+              <span style="font-size:clamp(5px,0.6vw,8px); padding:3px 8px; border-radius:100px; background:rgba(99,102,241,0.1); color:#a5b4fc; border:1px solid rgba(99,102,241,0.2); font-weight:500;">🎤 口播</span>
+              <span style="font-size:clamp(5px,0.6vw,8px); padding:3px 8px; border-radius:100px; background:rgba(99,102,241,0.06); color:rgba(255,255,255,0.4); border:1px solid rgba(255,255,255,0.06);">📦 评测</span>
+              <span style="font-size:clamp(5px,0.6vw,8px); padding:3px 8px; border-radius:100px; background:rgba(99,102,241,0.06); color:rgba(255,255,255,0.4); border:1px solid rgba(255,255,255,0.06);">📱 展示</span>
+            </div>
+            <span class="ui-btn accent" style="font-size:clamp(4px,0.5vw,7px);">➤ 创建</span>
+          </div>
+          <!-- messages upgraded -->
+          <div style="flex:1; padding:6px 10px; display:flex; flex-direction:column; gap:6px; overflow-y:auto;">
+            <!-- Greeting card -->
+            <div style="display:flex; flex-direction:column; align-self:flex-start; gap:3px; max-width:88%;">
+              <div style="display:flex; align-items:center; gap:3px;">
+                <div style="width:clamp(12px,1.5vw,18px);height:clamp(12px,1.5vw,18px);border-radius:50%;background:linear-gradient(135deg,#6366f1,#a855f7);display:flex;align-items:center;justify-content:center;font-size:clamp(5px,0.6vw,8px);">🤖</div>
+                <span style="font-size:clamp(4px,0.5vw,7px); color:rgba(255,255,255,0.2);">AI 助手</span>
+              </div>
+              <div class="bubble-ai" style="font-size:clamp(5px,0.6vw,9px);">你好！我是 AI 创作助手 👋<br>想做什么类型的视频？</div>
+              <span style="font-size:clamp(3px,0.4vw,6px); color:rgba(255,255,255,0.1); padding-left:4px;">刚刚</span>
+            </div>
+
+            <!-- Template cards (new design) -->
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:4px; max-width:88%; align-self:flex-start;">
+              <div style="background:rgba(99,102,241,0.08); border:1.5px solid rgba(99,102,241,0.2); border-radius:8px; padding:5px 6px; cursor:pointer;">
+                <div style="font-size:clamp(7px,0.8vw,13px);">🎤</div>
+                <div style="font-size:clamp(5px,0.6vw,9px); color:#e2e8f0; font-weight:600;">口播</div>
+                <div style="font-size:clamp(4px,0.4vw,6px); color:rgba(255,255,255,0.25);">真人出镜解说</div>
+              </div>
+              <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); border-radius:8px; padding:5px 6px;">
+                <div style="font-size:clamp(7px,0.8vw,13px);">📦</div>
+                <div style="font-size:clamp(5px,0.6vw,9px); color:#e2e8f0; font-weight:600;">评测</div>
+                <div style="font-size:clamp(4px,0.4vw,6px); color:rgba(255,255,255,0.25);">产品开箱测评</div>
+              </div>
+              <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); border-radius:8px; padding:5px 6px;">
+                <div style="font-size:clamp(7px,0.8vw,13px);">📱</div>
+                <div style="font-size:clamp(5px,0.6vw,9px); color:#e2e8f0; font-weight:600;">展示</div>
+                <div style="font-size:clamp(4px,0.4vw,6px); color:rgba(255,255,255,0.25);">产品细节展示</div>
+              </div>
+              <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); border-radius:8px; padding:5px 6px;">
+                <div style="font-size:clamp(7px,0.8vw,13px);">🎬</div>
+                <div style="font-size:clamp(5px,0.6vw,9px); color:#e2e8f0; font-weight:600;">Vlog</div>
+                <div style="font-size:clamp(4px,0.4vw,6px); color:rgba(255,255,255,0.25);">日常记录分享</div>
+              </div>
+            </div>
+
+            <!-- user message -->
+            <div style="display:flex; justify-content:flex-end; align-items:flex-end; gap:3px;">
+              <span style="font-size:clamp(3px,0.4vw,6px); color:rgba(255,255,255,0.1);">14:32</span>
+              <div class="bubble-ui" style="font-size:clamp(5px,0.6vw,9px);">口播</div>
+            </div>
+
+            <!-- assistant with quick options (enhanced) -->
+            <div style="display:flex; flex-direction:column; align-self:flex-start; gap:3px; max-width:88%;">
+              <div class="bubble-ai" style="font-size:clamp(5px,0.6vw,9px);">要在哪些平台发布？支持多选 👇</div>
+              <div style="display:flex; flex-wrap:wrap; gap:4px; padding:2px 0;">
+                <span style="background:rgba(99,102,241,0.12); color:#a5b4fc; border:1px solid rgba(99,102,241,0.2); padding:4px 10px; border-radius:100px; font-size:clamp(5px,0.6vw,8px);">🎵 抖音 ✓</span>
+                <span style="background:rgba(255,255,255,0.02); color:rgba(255,255,255,0.5); border:1px solid rgba(255,255,255,0.06); padding:4px 10px; border-radius:100px; font-size:clamp(5px,0.6vw,8px);">🎬 快手 ✓</span>
+                <span style="background:rgba(255,255,255,0.02); color:rgba(255,255,255,0.35); border:1px solid rgba(255,255,255,0.06); padding:4px 10px; border-radius:100px; font-size:clamp(5px,0.6vw,8px);">📕 小红书</span>
+              </div>
+              <span class="ui-btn accent" style="font-size:clamp(5px,0.6vw,8px); padding:5px 14px; align-self:flex-start;">✓ 确认选择 (2)</span>
+            </div>
+
+            <!-- missing hint (enhanced) -->
+            <div style="display:flex; justify-content:center;">
+              <div style="background:rgba(245,158,11,0.06); border:1px solid rgba(245,158,11,0.12); border-radius:8px; padding:5px 10px; font-size:clamp(4px,0.5vw,7px); color:#fbbf24; display:flex; gap:4px; align-items:center;">
+                <span>📋</span><span>还差 2 项：素材图片、文案脚本</span>
+              </div>
+            </div>
+          </div>
+          <!-- input enhanced -->
+          <div style="display:flex; gap:5px; align-items:center; padding:6px 10px; margin:4px; background:rgba(255,255,255,0.03); border-radius:10px; border:1px solid rgba(255,255,255,0.05);">
+            <span style="font-size:clamp(7px,0.8vw,14px); opacity:0.3; cursor:pointer;">📎</span>
+            <span style="flex:1; font-size:clamp(5px,0.6vw,9px); color:rgba(255,255,255,0.2);">输入你的创意...</span>
+            <span style="font-size:clamp(7px,0.8vw,14px); opacity:0.2;">😊</span>
+            <div style="width:clamp(18px,2.5vw,30px);height:clamp(18px,2.5vw,30px);border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:clamp(7px,0.8vw,12px); box-shadow:0 0 12px rgba(99,102,241,0.3);">➤</div>
+          </div>
+        </div>
+        <div class="annotation" style="color:#10b981; font-size:clamp(5px,0.6vw,8px);">
+          ✅ 模板改为卡片式（参考Synthesia）<br>
+          ✅ 快捷选项有选中态+确认按钮<br>
+          ✅ 输入区：表情·发光发送·圆角<br>
+          ✅ AI 有头像标识
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===========================================
+     SLIDE 8: CHAT DESIGN SYSTEM — COLOR/SPACING/TYPO
+     =========================================== -->
+<section class="slide" id="s8">
+  <div class="slide-content" style="gap:var(--content-gap);">
+    <h2>对话视觉系统：排版 · 色彩 · 间距</h2>
+    
+    <div class="layout-grid cols3" style="align-items:start;">
+      <!-- Typography -->
+      <div style="display:flex; flex-direction:column; gap:clamp(4px,0.7vw,8px);">
+        <span class="tag tag-cyan">🔤 排版层级</span>
+        <div style="background:rgba(255,255,255,0.02); border-radius:8px; padding:clamp(6px,1vw,12px); display:flex; flex-direction:column; gap:clamp(3px,0.5vw,6px);">
+          <div style="font-size:clamp(8px,1vw,14px); font-weight:700; color:#e2e8f0;">display · 页面标题</div>
+          <div style="font-size:clamp(7px,0.9vw,12px); font-weight:600; color:#e2e8f0;">h1 · 区块标题</div>
+          <div style="font-size:clamp(6px,0.8vw,11px); font-weight:600; color:#06b6d4;">h2 · 卡片标题</div>
+          <div style="font-size:clamp(5px,0.7vw,10px); color:rgba(255,255,255,0.7);">body · 正文 (15px)</div>
+          <div style="font-size:clamp(4px,0.6vw,8px); color:rgba(255,255,255,0.35);">caption · 辅助文字</div>
+          <div style="font-size:clamp(3px,0.5vw,7px); color:rgba(255,255,255,0.15);">micro · 时间戳/标签</div>
+        </div>
+      </div>
+
+      <!-- Color tokens -->
+      <div style="display:flex; flex-direction:column; gap:clamp(4px,0.7vw,8px);">
+        <span class="tag tag-purple">🎨 色彩语义</span>
+        <div style="background:rgba(255,255,255,0.02); border-radius:8px; padding:clamp(6px,1vw,12px); display:flex; flex-direction:column; gap:clamp(3px,0.5vw,6px);">
+          <div style="display:flex; gap:6px; align-items:center;">
+            <div style="width:clamp(12px,1.5vw,20px);height:clamp(12px,1.5vw,20px);border-radius:4px;background:#6366f1;"></div>
+            <span style="font-size:clamp(4px,0.6vw,8px);">primary · #6366f1</span>
+          </div>
+          <div style="display:flex; gap:6px; align-items:center;">
+            <div style="width:clamp(12px,1.5vw,20px);height:clamp(12px,1.5vw,20px);border-radius:4px;background:#8b5cf6;"></div>
+            <span style="font-size:clamp(4px,0.6vw,8px);">accent-light · #8b5cf6</span>
+          </div>
+          <div style="display:flex; gap:6px; align-items:center;">
+            <div style="width:clamp(12px,1.5vw,20px);height:clamp(12px,1.5vw,20px);border-radius:4px;background:#10b981;"></div>
+            <span style="font-size:clamp(4px,0.6vw,8px);">success · #10b981</span>
+          </div>
+          <div style="display:flex; gap:6px; align-items:center;">
+            <div style="width:clamp(12px,1.5vw,20px);height:clamp(12px,1.5vw,20px);border-radius:4px;background:#f59e0b;"></div>
+            <span style="font-size:clamp(4px,0.6vw,8px);">warning · #f59e0b</span>
+          </div>
+          <div style="display:flex; gap:6px; align-items:center;">
+            <div style="width:clamp(12px,1.5vw,20px);height:clamp(12px,1.5vw,20px);border-radius:4px;background:#ef4444;"></div>
+            <span style="font-size:clamp(4px,0.6vw,8px);">error · #ef4444</span>
+          </div>
+          <div class="divider"></div>
+          <div style="display:flex; gap:6px; align-items:center;">
+            <div style="width:clamp(10px,1.2vw,16px);height:clamp(10px,1.2vw,16px);border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);"></div>
+            <span style="font-size:clamp(4px,0.6vw,8px); color:#a5b4fc;">按钮渐变</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Spacing -->
+      <div style="display:flex; flex-direction:column; gap:clamp(4px,0.7vw,8px);">
+        <span class="tag tag-green">📐 间距规范</span>
+        <div style="background:rgba(255,255,255,0.02); border-radius:8px; padding:clamp(6px,1vw,12px); display:flex; flex-direction:column; gap:clamp(3px,0.5vw,6px);">
+          <div style="font-size:clamp(4px,0.6vw,8px);">gap-xs · 4px</div>
+          <div style="height:3px; background:rgba(99,102,241,0.1); width:4px;"></div>
+          <div style="font-size:clamp(4px,0.6vw,8px);">gap-sm · 8px</div>
+          <div style="height:6px; background:rgba(99,102,241,0.15); width:8px;"></div>
+          <div style="font-size:clamp(4px,0.6vw,8px);">gap-md · 12px</div>
+          <div style="height:9px; background:rgba(99,102,241,0.2); width:12px;"></div>
+          <div style="font-size:clamp(4px,0.6vw,8px);">gap-lg · 16px</div>
+          <div style="height:12px; background:rgba(99,102,241,0.25); width:16px;"></div>
+          <div style="font-size:clamp(4px,0.6vw,8px);">gap-xl · 24px</div>
+          <div style="height:18px; background:rgba(99,102,241,0.3); width:24px;"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Bubble comparison -->
+    <div style="display:flex; gap:clamp(8px,2vw,20px); align-items:center; justify-content:center; flex-wrap:wrap;">
+      <div style="display:flex; flex-direction:column; gap:clamp(3px,0.5vw,6px); align-items:center;">
+        <span style="font-size:clamp(4px,0.5vw,7px); color:rgba(255,255,255,0.3);">用户气泡</span>
+        <div style="background:linear-gradient(135deg,#6366f1,#8b5cf6); color:#fff; padding:clamp(4px,0.8vw,10px) clamp(6px,1.2vw,16px); border-radius:12px 12px 3px 12px; font-size:clamp(5px,0.7vw,10px); max-width:200px; box-shadow:0 2px 12px rgba(99,102,241,0.15);">
+          帮我生成一段产品介绍视频
+        </div>
+        <span style="font-size:clamp(3px,0.4vw,6px); color:rgba(255,255,255,0.1);">br 12px 12px 3px 12px</span>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:clamp(3px,0.5vw,6px); align-items:center;">
+        <span style="font-size:clamp(4px,0.5vw,7px); color:rgba(255,255,255,0.3);">AI 气泡</span>
+        <div style="background:#2d2d44; color:#e0e0e0; padding:clamp(4px,0.8vw,10px) clamp(6px,1.2vw,16px); border-radius:12px 12px 12px 3px; font-size:clamp(5px,0.7vw,10px); max-width:200px; line-height:1.5;">
+          好的！让我为你生成一段产品介绍视频的脚本…
+          <span style="display:inline-block; width:clamp(3px,0.4vw,5px); height:clamp(7px,1vw,12px); background:#8b5cf6; vertical-align:bottom; animation:blink 0.8s infinite;"></span>
+        </div>
+        <span style="font-size:clamp(3px,0.4vw,6px); color:rgba(255,255,255,0.1);">br 12px 12px 12px 3px + 光标闪烁</span>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:clamp(3px,0.5vw,6px); align-items:center;">
+        <span style="font-size:clamp(4px,0.5vw,7px); color:rgba(255,255,255,0.3);">系统提示</span>
+        <div style="background:rgba(245,158,11,0.06); border:1px solid rgba(245,158,11,0.12); color:#fbbf24; padding:clamp(3px,0.6vw,8px) clamp(5px,1vw,12px); border-radius:8px; font-size:clamp(5px,0.7vw,10px); text-align:center;">
+          ⏳ 还差 2 项：素材图片、文案脚本
+        </div>
+        <span style="font-size:clamp(3px,0.4vw,6px); color:rgba(255,255,255,0.1);">warning 色·圆角卡片</span>
+      </div>
+    </div>
+
+    <div style="font-size:clamp(4px,0.5vw,7px); color:rgba(255,255,255,0.18); text-align:center; margin-top:4px;">
+      气泡圆角不对称区分角色 · 用户渐变背景 · AI 深灰背景 · 系统 warning 背景
+    </div>
+  </div>
+</section>
+
+<!-- ===========================================
+     SLIDE 9: HOMEPAGE REDESIGN — 对话 + 作品 + 工具
+     =========================================== -->
+<section class="slide" id="s9">
+  <div class="slide-content" style="gap:var(--content-gap);">
+    <div style="display:flex; gap:clamp(4px,1vw,8px); align-items:center; flex-wrap:wrap;">
+      <span class="tag tag-cyan" style="font-size:clamp(5px,0.6vw,9px);">🆕 全新设计方向</span>
+      <h2 style="font-size:var(--h2-size); margin:0;">首页架构：聊天框 + 作品墙 + 工具集</h2>
+    </div>
+    <p style="font-size:var(--body-size); color:rgba(255,255,255,0.45);">从单一聊天视图 → 创作者服务平台首页</p>
+
+    <!-- Full page mockup -->
+    <div class="mockup-desktop" style="width:clamp(260px,42vw,560px); height:clamp(280px,52vh,480px); display:flex; flex-direction:column; margin:0 auto; overflow:hidden;">
+      <!-- Top bar -->
+      <div style="display:flex; align-items:center; gap:6px; padding:5px 10px; border-bottom:1px solid rgba(255,255,255,0.04); background:rgba(255,255,255,0.01);">
+        <div style="font-size:clamp(8px,1vw,14px);">🎬</div>
+        <span style="font-size:clamp(6px,0.7vw,10px); font-weight:700; color:#e2e8f0;">AI 视频创作</span>
+        <div style="flex:1;"></div>
+        <span style="font-size:clamp(4px,0.5vw,7px); color:rgba(255,255,255,0.2); padding:2px 6px; border-radius:4px; border:1px solid rgba(255,255,255,0.06);">登录</span>
+      </div>
+
+      <!-- Scrollable main content -->
+      <div style="flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:clamp(6px,1vw,12px); padding:clamp(6px,1vw,12px);">
+
+        <!-- ===== SECTION 1: Chat Dialog ===== -->
+        <div style="background:rgba(255,255,255,0.01); border:1px solid rgba(99,102,241,0.1); border-radius:10px; overflow:hidden;">
+          <div style="background:linear-gradient(135deg,rgba(99,102,241,0.06),rgba(139,92,246,0.03)); padding:3px 8px; border-bottom:1px solid rgba(99,102,241,0.06); display:flex; align-items:center; gap:4px;">
+            <span style="font-size:clamp(5px,0.6vw,8px); color:#818cf8;">💬 AI 视频创作助手</span>
+            <span style="flex:1;"></span>
+            <span style="font-size:clamp(3px,0.4vw,5px); color:rgba(255,255,255,0.1);">直接对话开始创作 👇</span>
+          </div>
+          <div style="padding:4px 6px; display:flex; flex-direction:column; gap:4px; max-height:clamp(100px,18vh,160px); overflow-y:auto;">
+            <div style="display:flex; gap:3px; align-items:flex-start;">
+              <div style="width:clamp(10px,1.2vw,16px);height:clamp(10px,1.2vw,16px);border-radius:50%;background:linear-gradient(135deg,#6366f1,#a855f7);display:flex;align-items:center;justify-content:center;font-size:clamp(5px,0.6vw,8px);flex-shrink:0;">🤖</div>
+              <div class="bubble-ai" style="font-size:clamp(5px,0.6vw,8px);">你好！我是 AI 创作助手 👋 想做什么类型的视频？</div>
+            </div>
+            <div style="display:flex; gap:3px; flex-wrap:wrap; padding-left:clamp(12px,1.5vw,20px);">
+              <span style="font-size:clamp(4px,0.5vw,7px); padding:3px 7px; border-radius:100px; background:rgba(99,102,241,0.1); color:#a5b4fc; border:1px solid rgba(99,102,241,0.15);">🎤 口播</span>
+              <span style="font-size:clamp(4px,0.5vw,7px); padding:3px 7px; border-radius:100px; background:rgba(255,255,255,0.02); color:rgba(255,255,255,0.4); border:1px solid rgba(255,255,255,0.05);">📦 评测</span>
+              <span style="font-size:clamp(4px,0.5vw,7px); padding:3px 7px; border-radius:100px; background:rgba(255,255,255,0.02); color:rgba(255,255,255,0.4); border:1px solid rgba(255,255,255,0.05);">📱 展示</span>
+              <span style="font-size:clamp(4px,0.5vw,7px); padding:3px 7px; border-radius:100px; background:rgba(255,255,255,0.02); color:rgba(255,255,255,0.4); border:1px solid rgba(255,255,255,0.05);">🎬 Vlog</span>
+            </div>
+            <div style="display:flex; justify-content:flex-end;">
+              <div class="bubble-ui" style="font-size:clamp(4px,0.5vw,7px);">帮我生成一段产品开箱视频</div>
+            </div>
+          </div>
+          <!-- Input mini -->
+          <div style="display:flex; gap:3px; align-items:center; padding:4px 6px; border-top:1px solid rgba(255,255,255,0.03); background:rgba(255,255,255,0.01);">
+            <span style="font-size:clamp(6px,0.7vw,10px); opacity:0.25;">📎</span>
+            <span style="flex:1; font-size:clamp(4px,0.5vw,7px); color:rgba(255,255,255,0.15);">描述你的视频创意...</span>
+            <div style="width:clamp(14px,1.8vw,22px);height:clamp(14px,1.8vw,22px);border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:clamp(5px,0.6vw,8px);box-shadow:0 0 8px rgba(99,102,241,0.3);">➤</div>
+          </div>
+        </div>
+
+        <!-- Section label -->
+        <div style="display:flex; align-items:center; gap:6px; padding:0 2px;">
+          <div style="flex:1; height:1px; background:rgba(255,255,255,0.04);"></div>
+          <span style="font-size:clamp(5px,0.6vw,9px); color:rgba(255,255,255,0.2); font-weight:500;">🎬 作品聚合</span>
+          <div style="flex:1; height:1px; background:rgba(255,255,255,0.04);"></div>
+        </div>
+
+        <!-- ===== SECTION 2: Portfolio ===== -->
+        <div style="display:flex; flex-direction:column; gap:clamp(3px,0.5vw,6px);">
+          <!-- Tabs -->
+          <div style="display:flex; gap:2px;">
+            <span style="font-size:clamp(4px,0.5vw,7px); padding:3px 8px; border-radius:4px 4px 0 0; background:rgba(99,102,241,0.08); color:#818cf8; font-weight:500;">官方模板</span>
+            <span style="font-size:clamp(4px,0.5vw,7px); padding:3px 8px; border-radius:4px 4px 0 0; color:rgba(255,255,255,0.2);">我的作品</span>
+            <span style="font-size:clamp(4px,0.5vw,7px); padding:3px 8px; border-radius:4px 4px 0 0; color:rgba(255,255,255,0.2);">优秀作品</span>
+          </div>
+
+          <!-- Cards row -->
+          <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:4px;">
+            <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.04); border-radius:6px; overflow:hidden;">
+              <div style="height:clamp(28px,5vh,48px); background:linear-gradient(135deg,rgba(99,102,241,0.2),rgba(139,92,246,0.1)); display:flex; align-items:center; justify-content:center; font-size:clamp(8px,1vw,16px);">🎤</div>
+              <div style="padding:3px 4px; font-size:clamp(3px,0.4vw,6px); color:rgba(255,255,255,0.4); text-align:center;">口播模板</div>
+            </div>
+            <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.04); border-radius:6px; overflow:hidden;">
+              <div style="height:clamp(28px,5vh,48px); background:linear-gradient(135deg,rgba(6,182,212,0.15),rgba(6,182,212,0.05)); display:flex; align-items:center; justify-content:center; font-size:clamp(8px,1vw,16px);">📦</div>
+              <div style="padding:3px 4px; font-size:clamp(3px,0.4vw,6px); color:rgba(255,255,255,0.4); text-align:center;">产品评测</div>
+            </div>
+            <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.04); border-radius:6px; overflow:hidden;">
+              <div style="height:clamp(28px,5vh,48px); background:linear-gradient(135deg,rgba(16,185,129,0.15),rgba(16,185,129,0.05)); display:flex; align-items:center; justify-content:center; font-size:clamp(8px,1vw,16px);">📱</div>
+              <div style="padding:3px 4px; font-size:clamp(3px,0.4vw,6px); color:rgba(255,255,255,0.4); text-align:center;">产品展示</div>
+            </div>
+            <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.04); border-radius:6px; overflow:hidden;">
+              <div style="height:clamp(28px,5vh,48px); background:linear-gradient(135deg,rgba(245,158,11,0.15),rgba(245,158,11,0.05)); display:flex; align-items:center; justify-content:center; font-size:clamp(8px,1vw,16px);">🎬</div>
+              <div style="padding:3px 4px; font-size:clamp(3px,0.4vw,6px); color:rgba(255,255,255,0.4); text-align:center;">Vlog 日常</div>
+            </div>
+          </div>
+          <span style="font-size:clamp(3px,0.4vw,5px); color:rgba(255,255,255,0.08); text-align:center;">查看更多模板 →</span>
+        </div>
+
+        <!-- Section label -->
+        <div style="display:flex; align-items:center; gap:6px; padding:0 2px;">
+          <div style="flex:1; height:1px; background:rgba(255,255,255,0.04);"></div>
+          <span style="font-size:clamp(5px,0.6vw,9px); color:rgba(255,255,255,0.2); font-weight:500;">🛠 实用工具</span>
+          <div style="flex:1; height:1px; background:rgba(255,255,255,0.04);"></div>
+        </div>
+
+        <!-- ===== SECTION 3: Tools ===== -->
+        <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:4px;">
+          <div style="background:rgba(255,255,255,0.01); border:1px dashed rgba(255,255,255,0.04); border-radius:6px; padding:clamp(4px,0.6vw,10px); text-align:center; display:flex; flex-direction:column; gap:2px; opacity:0.5;">
+            <span style="font-size:clamp(7px,0.8vw,14px);">✂️</span>
+            <span style="font-size:clamp(4px,0.5vw,7px); color:rgba(255,255,255,0.2);">视频剪辑</span>
+            <span style="font-size:clamp(3px,0.3vw,5px); padding:1px 4px; border-radius:2px; background:rgba(245,158,11,0.1); color:#fbbf24; display:inline-block; width:fit-content; margin:0 auto;">开发中</span>
+          </div>
+          <div style="background:rgba(255,255,255,0.01); border:1px dashed rgba(255,255,255,0.04); border-radius:6px; padding:clamp(4px,0.6vw,10px); text-align:center; display:flex; flex-direction:column; gap:2px; opacity:0.5;">
+            <span style="font-size:clamp(7px,0.8vw,14px);">🎵</span>
+            <span style="font-size:clamp(4px,0.5vw,7px); color:rgba(255,255,255,0.2);">配音配乐</span>
+            <span style="font-size:clamp(3px,0.3vw,5px); padding:1px 4px; border-radius:2px; background:rgba(245,158,11,0.1); color:#fbbf24; display:inline-block; width:fit-content; margin:0 auto;">开发中</span>
+          </div>
+          <div style="background:rgba(255,255,255,0.01); border:1px dashed rgba(255,255,255,0.04); border-radius:6px; padding:clamp(4px,0.6vw,10px); text-align:center; display:flex; flex-direction:column; gap:2px; opacity:0.5;">
+            <span style="font-size:clamp(7px,0.8vw,14px);">📊</span>
+            <span style="font-size:clamp(4px,0.5vw,7px); color:rgba(255,255,255,0.2);">数据分析</span>
+            <span style="font-size:clamp(3px,0.3vw,5px); padding:1px 4px; border-radius:2px; background:rgba(245,158,11,0.1); color:#fbbf24; display:inline-block; width:fit-content; margin:0 auto;">开发中</span>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div style="text-align:center; padding:clamp(4px,0.6vw,8px); font-size:clamp(3px,0.4vw,5px); color:rgba(255,255,255,0.06);">
+          AI 视频创作平台 · 让每个人都能轻松创作视频
+        </div>
+      </div>
+    </div>
+
+    <div class="annotation" style="color:#10b981; text-align:center;">
+      ✅ 对话区 — 打开即用·无需跳转<br>
+      ✅ 作品墙 — 官方模板 / 我的作品 / 优秀作品 三个 Tab<br>
+      ✅ 工具集 — 预留模块·虚线占位
+    </div>
+  </div>
+</section>
+
+<!-- ===========================================
+     SLIDE 10: PORTFOLIO SECTION DETAIL
+     =========================================== -->
+<section class="slide" id="s10">
+  <div class="slide-content" style="gap:var(--content-gap);">
+    <h2>作品聚合模块详细设计</h2>
+    <p style="font-size:var(--body-size); color:rgba(255,255,255,0.45);">三个 Tab 切换 · 卡片网格 · hover 预览</p>
+
+    <div style="display:flex; gap:clamp(8px,2vw,16px);">
+      <!-- Tab 1: Official Templates -->
+      <div style="flex:1; display:flex; flex-direction:column; gap:clamp(3px,0.5vw,6px);">
+        <span class="tag tag-cyan" style="width:fit-content;">🎬 官方模板</span>
+        <div class="mockup-desktop" style="flex:1; padding:clamp(4px,0.7vw,10px);">
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:4px;">
+            <div style="background:rgba(99,102,241,0.06); border:1px solid rgba(99,102,241,0.12); border-radius:6px; overflow:hidden;">
+              <div style="height:clamp(24px,4.5vh,44px); background:linear-gradient(135deg,rgba(99,102,241,0.25),rgba(139,92,246,0.1)); display:flex; align-items:center; justify-content:center; font-size:clamp(8px,1vw,16px); position:relative;">
+                🎤
+                <span style="position:absolute;top:2px;right:3px;font-size:clamp(3px,0.3vw,5px); padding:1px 3px; border-radius:2px; background:rgba(99,102,241,0.3); color:#a5b4fc;">热门</span>
+              </div>
+              <div style="padding:3px 5px;">
+                <div style="font-size:clamp(4px,0.5vw,7px); font-weight:600; color:#e2e8f0;">口播带货</div>
+                <div style="font-size:clamp(3px,0.3vw,5px); color:rgba(255,255,255,0.2);">真人出镜 · 30s</div>
+              </div>
+            </div>
+            <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.04); border-radius:6px; overflow:hidden;">
+              <div style="height:clamp(24px,4.5vh,44px); background:linear-gradient(135deg,rgba(6,182,212,0.2),rgba(6,182,212,0.05)); display:flex; align-items:center; justify-content:center; font-size:clamp(8px,1vw,16px);">📦</div>
+              <div style="padding:3px 5px;">
+                <div style="font-size:clamp(4px,0.5vw,7px); font-weight:600; color:#e2e8f0;">产品开箱</div>
+                <div style="font-size:clamp(3px,0.3vw,5px); color:rgba(255,255,255,0.2);">特写镜头 · 45s</div>
+              </div>
+            </div>
+            <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.04); border-radius:6px; overflow:hidden;">
+              <div style="height:clamp(24px,4.5vh,44px); background:linear-gradient(135deg,rgba(16,185,129,0.2),rgba(16,185,129,0.05)); display:flex; align-items:center; justify-content:center; font-size:clamp(8px,1vw,16px);">📱</div>
+              <div style="padding:3px 5px;">
+                <div style="font-size:clamp(4px,0.5vw,7px); font-weight:600; color:#e2e8f0;">功能演示</div>
+                <div style="font-size:clamp(3px,0.3vw,5px); color:rgba(255,255,255,0.2);">APP界面 · 60s</div>
+              </div>
+            </div>
+            <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.04); border-radius:6px; overflow:hidden;">
+              <div style="height:clamp(24px,4.5vh,44px); background:linear-gradient(135deg,rgba(245,158,11,0.2),rgba(245,158,11,0.05)); display:flex; align-items:center; justify-content:center; font-size:clamp(8px,1vw,16px);">🎬</div>
+              <div style="padding:3px 5px;">
+                <div style="font-size:clamp(4px,0.5vw,7px); font-weight:600; color:#e2e8f0;">Vlog模板</div>
+                <div style="font-size:clamp(3px,0.3vw,5px); color:rgba(255,255,255,0.2);">日常记录 · 30s</div>
+              </div>
+            </div>
+          </div>
+          <div style="font-size:clamp(3px,0.4vw,5px); color:rgba(255,255,255,0.08); text-align:center; margin-top:4px;">点击模板 → 自动填入对话参数</div>
+        </div>
+      </div>
+
+      <!-- Tab 2: My Works -->
+      <div style="flex:1; display:flex; flex-direction:column; gap:clamp(3px,0.5vw,6px);">
+        <span class="tag tag-purple" style="width:fit-content;">📁 我的作品</span>
+        <div class="mockup-desktop" style="flex:1; padding:clamp(4px,0.7vw,10px);">
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:4px;">
+            <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.05); border-radius:6px; overflow:hidden; position:relative;">
+              <div style="height:clamp(24px,4.5vh,44px); background:#0a0e1a; display:flex; align-items:center; justify-content:center; font-size:clamp(10px,1.2vw,20px);">▶</div>
+              <div style="position:absolute;top:2px;right:2px;font-size:clamp(3px,0.3vw,5px); padding:1px 4px; border-radius:3px; background:#10b981; color:#fff;">已发布</div>
+              <div style="padding:3px 5px;">
+                <div style="font-size:clamp(4px,0.5vw,7px); color:#e2e8f0;">产品介绍视频</div>
+                <div style="font-size:clamp(3px,0.3vw,5px); color:rgba(255,255,255,0.15);">抖音 · 5小时前</div>
+              </div>
+            </div>
+            <div style="background:rgba(255,255,255,0.02); border:1px dashed rgba(255,255,255,0.04); border-radius:6px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; min-height:clamp(40px,8vh,72px); opacity:0.35;">
+              <span style="font-size:clamp(8px,1vw,16px);">＋</span>
+              <span style="font-size:clamp(3px,0.4vw,6px); color:rgba(255,255,255,0.15);">创建新作品</span>
+            </div>
+          </div>
+          <div style="font-size:clamp(3px,0.4vw,5px); color:rgba(255,255,255,0.08); text-align:center; margin-top:4px;">需要登录后显示</div>
+        </div>
+      </div>
+
+      <!-- Tab 3: Featured -->
+      <div style="flex:1; display:flex; flex-direction:column; gap:clamp(3px,0.5vw,6px);">
+        <span class="tag tag-green" style="width:fit-content;">⭐ 优秀作品</span>
+        <div class="mockup-desktop" style="flex:1; padding:clamp(4px,0.7vw,10px);">
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:4px;">
+            <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.05); border-radius:6px; overflow:hidden;">
+              <div style="height:clamp(24px,4.5vh,44px); background:linear-gradient(135deg,rgba(245,158,11,0.15),rgba(245,158,11,0.05)); display:flex; align-items:center; justify-content:center; font-size:clamp(8px,1vw,16px);">🏆</div>
+              <div style="padding:3px 5px;">
+                <div style="font-size:clamp(4px,0.5vw,7px); color:#e2e8f0;">科技测评</div>
+                <div style="font-size:clamp(3px,0.3vw,5px); color:rgba(255,255,255,0.15);">@创作者A · 1.2w 播放</div>
+              </div>
+            </div>
+            <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.05); border-radius:6px; overflow:hidden;">
+              <div style="height:clamp(24px,4.5vh,44px); background:linear-gradient(135deg,rgba(236,72,153,0.1),rgba(236,72,153,0.03)); display:flex; align-items:center; justify-content:center; font-size:clamp(8px,1vw,16px);">🌟</div>
+              <div style="padding:3px 5px;">
+                <div style="font-size:clamp(4px,0.5vw,7px); color:#e2e8f0;">美食探店</div>
+                <div style="font-size:clamp(3px,0.3vw,5px); color:rgba(255,255,255,0.15);">@创作者B · 8.5k 播放</div>
+              </div>
+            </div>
+          </div>
+          <div style="font-size:clamp(3px,0.4vw,5px); color:rgba(255,255,255,0.08); text-align:center; margin-top:4px;">每周精选 · 社区投稿</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div style="display:flex; gap:clamp(6px,1vw,12px); justify-content:center; flex-wrap:wrap;">
+      <div style="font-size:var(--small-size); color:rgba(255,255,255,0.3);">🔄 交互：hover 卡片 → 预览播放</div>
+      <div style="font-size:var(--small-size); color:rgba(255,255,255,0.3);">📋 点击模板 → 自动填入对话参数</div>
+      <div style="font-size:var(--small-size); color:rgba(255,255,255,0.3);">🔗 点击作品 → 进入详情页</div>
+    </div>
+  </div>
+</section>
+
+<!-- ===========================================
+     SLIDE 11: COMPARISON — OLD vs NEW HOMEPAGE
+     =========================================== -->
+<section class="slide" id="s11">
+  <div class="slide-content" style="gap:var(--content-gap);">
+    <h2>首页架构：旧 vs 新</h2>
+
+    <div class="compare-wrapper" style="align-items:stretch;">
+      <!-- OLD -->
+      <div class="compare-col" style="align-items:center; flex:4;">
+        <span class="label-bad">❌ 旧架构（v1 计划）</span>
+        <div style="background:rgba(255,255,255,0.02); border-radius:8px; padding:clamp(6px,1vw,14px); width:100%; font-family:monospace; font-size:clamp(5px,0.7vw,10px); line-height:1.6;">
+          / → CreatorPage<br>
+          &nbsp;&nbsp;└─ ChatBar<br>
+          &nbsp;&nbsp;└─ ChatView (520px 居中)<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└─ 对话区<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└─ 预览面板<br>
+          <br>
+          <span style="color:#ef4444;">⚠ 纯聊天工具形态<br>⚠ 无作品展示<br>⚠ 无工具入口<br>⚠ 首屏大片留白</span>
+        </div>
+      </div>
+
+      <!-- ARROW -->
+      <div style="display:flex; align-items:center; flex:1; justify-content:center;">
+        <span class="label-arrow" style="font-size:clamp(1rem,2vw,2.5rem);">→</span>
+      </div>
+
+      <!-- NEW -->
+      <div class="compare-col" style="align-items:center; flex:5;">
+        <span class="label-good">✅ 新架构（本次调整）</span>
+        <div style="background:rgba(255,255,255,0.02); border-radius:8px; padding:clamp(6px,1vw,14px); width:100%; font-family:monospace; font-size:clamp(5px,0.7vw,10px); line-height:1.6;">
+          / → LandingPage<br>
+          &nbsp;&nbsp;├─ 💬 对话模块 (顶部首屏)<br>
+          &nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;└─ 直接开始创作<br>
+          &nbsp;&nbsp;├─ 🎬 作品聚合<br>
+          &nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;├─ Tab: 官方模板<br>
+          &nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;├─ Tab: 我的作品<br>
+          &nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;└─ Tab: 优秀作品<br>
+          &nbsp;&nbsp;└─ 🛠 实用工具<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├─ 视频剪辑 (开发中)<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├─ 配音配乐 (开发中)<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└─ 数据分析 (开发中)<br>
+          <br>
+          <span style="color:#10b981;">✅ 创作者服务平台<br>✅ 首屏对话立即使用<br>✅ 作品展示引流<br>✅ 工具生态预留</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Files to touch -->
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:clamp(6px,1vw,12px);">
+      <div class="ui-section" style="padding:clamp(6px,1vw,14px);">
+        <h3 style="font-size:clamp(0.7rem,1.4vw,1.1rem);">📁 新建文件</h3>
+        <span class="ui-text" style="font-family:monospace; display:block;">src/pages/LandingPage.tsx</span>
+        <span class="ui-text" style="font-family:monospace; display:block;">src/components/PortfolioGrid.tsx</span>
+        <span class="ui-text" style="font-family:monospace; display:block;">src/components/ToolGrid.tsx</span>
+        <span class="ui-text" style="font-family:monospace; display:block;">src/components/SectionDivider.tsx</span>
+      </div>
+      <div class="ui-section" style="padding:clamp(6px,1vw,14px);">
+        <h3 style="font-size:clamp(0.7rem,1.4vw,1.1rem);">✏️ 需调整文件</h3>
+        <span class="ui-text" style="font-family:monospace; display:block;">src/router.tsx — / → LandingPage</span>
+        <span class="ui-text" style="font-family:monospace; display:block;">CreatorPage — 嵌入 LandingPage</span>
+        <span class="ui-text" style="font-family:monospace; display:block;">chat.css — 首页滚动容器样式</span>
+      </div>
+    </div>
+
+    <div style="font-size:var(--small-size); color:rgba(255,255,255,0.25); text-align:center;">
+      💡 CreatorPage 聊天组件嵌入首页上半部分 · 作品/工具在下方滚动展示 · 导航栏固定在顶部
+    </div>
+  </div>
+</section>
+
+<!-- ===========================================
+     JS: Navigation Controller
+     =========================================== -->
+<script>
+(function() {
+  const slides = document.querySelectorAll('.slide');
+  const navDots = document.getElementById('navDots');
+  let current = 0;
+
+  slides.forEach((_, i) => {
+    const dot = document.createElement('div');
+    dot.className = 'nav-dot';
+    dot.onclick = () => goTo(i);
+    navDots.appendChild(dot);
+  });
+  const dots = document.querySelectorAll('.nav-dot');
+
+  function goTo(i) {
+    current = Math.max(0, Math.min(i, slides.length - 1));
+    slides[current].scrollIntoView({ behavior: 'smooth' });
+  }
+
+  function updateActive() {
+    slides.forEach((s, i) => {
+      s.classList.toggle('visible', i === current);
+    });
+    dots.forEach((d, i) => {
+      d.classList.toggle('active', i === current);
+    });
+  }
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        current = Array.from(slides).indexOf(entry.target);
+        updateActive();
+      }
+    });
+  }, { threshold: 0.5 });
+
+  slides.forEach(s => observer.observe(s));
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowRight') { e.preventDefault(); goTo(current + 1); }
+    if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') { e.preventDefault(); goTo(current - 1); }
+  });
+
+  document.addEventListener('wheel', e => {
+    if (Math.abs(e.deltaY) < 30) return;
+    e.preventDefault();
+    if (e.deltaY > 0) goTo(current + 1);
+    else goTo(current - 1);
+  }, { passive: false });
+
+  let touchY = 0;
+  document.addEventListener('touchstart', e => { touchY = e.touches[0].clientY; }, { passive: true });
+  document.addEventListener('touchend', e => {
+    const dy = touchY - e.changedTouches[0].clientY;
+    if (Math.abs(dy) > 50) {
+      if (dy > 0) goTo(current + 1);
+      else goTo(current - 1);
+    }
+  });
+
+  updateActive();
+})();
+</script>
+
+</body>
+</html>

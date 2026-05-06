@@ -2,9 +2,9 @@ import { cn } from '@/lib/utils'
 import { Film, BarChart3, Calendar, Settings, Video } from 'lucide-react'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
+import { Link, useLocation } from 'react-router-dom'
 
 interface SidebarProps {
-  activeView: string
   onNavigate: (view: string) => void
 }
 
@@ -16,7 +16,9 @@ const navItems = [
   { id: 'settings', label: '设置', icon: Settings },
 ]
 
-export function Sidebar({ activeView, onNavigate }: SidebarProps) {
+export function Sidebar({ onNavigate }: SidebarProps) {
+  const location = useLocation()
+
   return (
     <aside className="hidden lg:flex w-60 flex-col border-r border-border bg-card shrink-0">
       <div className="flex h-14 items-center gap-2 px-6 border-b border-border">
@@ -29,17 +31,34 @@ export function Sidebar({ activeView, onNavigate }: SidebarProps) {
       <nav className="flex-1 space-y-1 p-3">
         {navItems.map((item) => {
           const Icon = item.icon
-          const isActive = activeView === item.id
+          const isActive =
+            item.id === 'create'
+              ? location.pathname === '/' || location.pathname === '/creator'
+              : location.pathname === `/dashboard/${item.id}` ||
+                (item.id === 'dashboard' && location.pathname === '/dashboard')
+
+          if (item.id === 'create') {
+            return (
+              <Link
+                key={item.id}
+                to="/"
+                className={cn(
+                  'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
+                  isActive
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
+                )}
+              >
+                <Icon className="h-4 w-4" />
+                {item.label}
+              </Link>
+            )
+          }
+
           return (
             <button
               key={item.id}
-              onClick={() => {
-                if (item.id === 'create') {
-                  window.location.href = '/'
-                } else {
-                  onNavigate(item.id)
-                }
-              }}
+              onClick={() => onNavigate(item.id)}
               className={cn(
                 'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
                 isActive

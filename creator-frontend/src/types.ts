@@ -3,6 +3,7 @@ export interface Message {
   role: 'user' | 'assistant' | 'system';
   content: string;
   options?: string[];
+  optionMode?: 'single' | 'multi';
   timestamp: number;
 }
 
@@ -47,16 +48,9 @@ export interface IntentContext {
 export interface SessionState {
   sessionId: string | null;
   round: number;
-  status: 'chatting' | 'confirming' | 'submitted';
+  status: 'chatting' | 'submitted' | 'generating';
   messages: Message[];
-  forceConfirm: boolean;
   isStreaming: boolean;
-}
-
-export interface ConfirmData {
-  items: Record<string, unknown>;
-  missing: string[];
-  phase?: string;
 }
 
 export interface TaskResult {

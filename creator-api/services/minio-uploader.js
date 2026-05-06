@@ -1,20 +1,26 @@
 import { Client as MinioClient } from 'minio';
 import { extname } from 'path';
 import { v4 as uuidv4 } from 'uuid';
-
-const debugLog = (...args) => { if (process.env.DEBUG) console.log(...args); }; // eslint-disable-line no-console
+import { logger } from './logger.js'
 
 const BUCKET = process.env.MINIO_BUCKET || 'creator-uploads';
 
 const rawEndpoint = process.env.MINIO_ENDPOINT || 'http://localhost:9000';
 const url = new URL(rawEndpoint);
 
+const MINIO_ACCESS_KEY = process.env.MINIO_ACCESS_KEY;
+const MINIO_SECRET_KEY = process.env.MINIO_SECRET_KEY;
+
+if (!MINIO_ACCESS_KEY || !MINIO_SECRET_KEY) {
+  throw new Error('MINIO_ACCESS_KEY and MINIO_SECRET_KEY must be set in environment');
+}
+
 const minio = new MinioClient({
   endPoint: url.hostname,
   port: parseInt(url.port || '9000', 10),
   useSSL: url.protocol === 'https:',
-  accessKey: process.env.MINIO_ACCESS_KEY || 'avatar',
-  secretKey: process.env.MINIO_SECRET_KEY || 'changeme123',
+  accessKey: MINIO_ACCESS_KEY,
+  secretKey: MINIO_SECRET_KEY,
 });
 
 export async function ensureBucket() {
@@ -57,7 +63,7 @@ export async function uploadFromUrl(sourceUrl, prefix = 'videos') {
 
   const url = await minio.presignedGetObject(BUCKET, objectName, 7 * 24 * 60 * 60);
 
-  debugLog(`[minio] uploaded video: ${objectName} (${(buffer.length / 1024 / 1024).toFixed(1)}MB)`);
+  logger.debug(`[minio] uploaded video: ${objectName} (${(buffer.length / 1024 / 1024).toFixed(1)}MB)`);
 
   return { url, objectName, size: buffer.length };
 }

@@ -14,8 +14,21 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': {
-        target: 'http://100.98.212.62:3099',
+        target: 'http://localhost:3099',
         changeOrigin: true,
+        timeout: 120000,
+        proxyTimeout: 120000,
+        configure: (proxy, _options) => {
+          proxy.on('error', (err, _req, _res) => {
+            if (process.env.DEBUG_PROXY) console.log('proxy error', err);
+          });
+          proxy.on('proxyReq', (proxyReq, req, _res) => {
+            if (process.env.DEBUG_PROXY) console.log('Sending Request to the Target:', req.method, req.url);
+          });
+          proxy.on('proxyRes', (proxyRes, req, _res) => {
+            if (process.env.DEBUG_PROXY) console.log('Received Response from the Target:', proxyRes.statusCode, req.url);
+          });
+        },
       },
     },
   },

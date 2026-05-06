@@ -1,0 +1,23 @@
+- generic [ref=e3]:
+  - generic [ref=e4]:
+    - generic [ref=e5]: 💬 AI 创作
+    - generic [ref=e6]:
+      - button "文生视频" [ref=e7]
+      - button "图生视频" [ref=e8]
+      - button "文生图" [ref=e9]
+      - button "视频编辑" [ref=e10]
+    - textbox "描述你的视频创意，直接发送开始创作..." [ref=e11]
+    - button "➤ 快速创建" [disabled]
+    - button "⛶ 展开对话" [ref=e12]
+  - generic [ref=e13]:
+    - generic [ref=e14]:
+      - generic [ref=e15] [cursor=pointer]:
+        - generic [ref=e16]: 🎬 视频创作预览
+        - generic [ref=e17]: ▲
+      - generic [ref=e18]: 在下方描述你的视频创意，AI 将引导你完成创作
+      - generic [ref=e19]: ⏳ 还差：模板、平台、素材或文案、文案
+    - generic [ref=e24]: 描述需求
+    - generic [ref=e26]:
+      - button "📎" [ref=e27] [cursor=pointer]
+      - textbox "描述你想做什么视频..." [ref=e28]
+      - button "➤" [disabled] [ref=e29]

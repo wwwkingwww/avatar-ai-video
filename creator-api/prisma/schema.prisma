@@ -34,13 +34,51 @@ model VideoTask {
   @@index([userId])
 }
 
+model ModelRegistry {
+  id          String   @id @default(cuid())
+  endpoint    String   @unique
+  nameCn      String   @default("")
+  nameEn      String   @default("")
+  category    String   @default("")
+  taskType    String   @default("")
+  outputType  String   @default("")
+  inputTypes  String[] @default([])
+  params      Json     @default("[]")
+  className   String   @default("")
+  status      String   @default("draft")
+  visible     Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([status])
+  @@index([category])
+  @@index([visible])
+}
+
 enum TaskStatus {
   DRAFT
   GENERATING
   GENERATED
+  AWAITING_REVIEW
   SCHEDULED
   PUBLISHING
   PUBLISHED
+  PUBLISH_FAILED
   FAILED
   CANCELLED
+}
+
+model UserPreference {
+  id                      String   @id @default(cuid())
+  userId                  String   @unique
+  preferredTier           String   @default("standard")
+  preferSpeed             Boolean  @default(false)
+  preferQuality           Boolean  @default(false)
+  frequentlyUsedEndpoints String[] @default([])
+  preferredPlatforms      String[] @default([])
+  budgetLevel             String   @default("balanced")
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  @@index([userId])
 }

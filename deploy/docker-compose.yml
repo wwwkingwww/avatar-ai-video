@@ -21,9 +21,9 @@ services:
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_USER: avatar
-      POSTGRES_PASSWORD: avatar123
-      POSTGRES_DB: avatar_video
+      POSTGRES_USER: ${POSTGRES_USER:-avatar}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-avatar_video}
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
@@ -33,32 +33,11 @@ services:
       - "9000:9000"
       - "9001:9001"
     environment:
-      MINIO_ROOT_USER: avatar
-      MINIO_ROOT_PASSWORD: ${MINIO_PASSWORD:-changeme123}
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-avatar}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
     volumes:
       - minio_data:/data
     command: server /data --console-address ":9001"
-
-  openclaw:
-    image: openclaw/openclaw:latest
-    ports:
-      - "3000:18789"
-    environment:
-      REDIS_URL: redis://redis:6379
-      MQTT_BROKER: mqtt://mosquitto:1883
-      MINIO_ENDPOINT: http://minio:9000
-      MINIO_BUCKET: avatar-videos
-      OPENAI_API_KEY: ${OPENAI_API_KEY:-sk-placeholder}
-      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
-    volumes:
-      - ../skills:/opt/openclaw/skills:ro
-      - ../shared:/opt/openclaw/shared:ro
-      - ../templates:/opt/openclaw/templates:ro
-      - openclaw_data:/home/node/.openclaw
-    depends_on:
-      - mosquitto
-      - redis
-      - minio
 
   creator-api:
     build:
@@ -68,19 +47,16 @@ services:
       - "3099:3099"
     environment:
       REDIS_URL: redis://redis:6379
-      OPENCLAW_URL: http://openclaw:18789
-      OPENCLAW_TOKEN: ${OPENCLAW_TOKEN:-}
-      DEEPSEEK_KEY: ${DEEPSEEK_KEY:-sk-placeholder}
-      RH_API_KEY: ${RH_API_KEY:-}
+      DEEPSEEK_KEY: ${DEEPSEEK_KEY}
+      RH_API_KEY: ${RH_API_KEY}
       RH_API_BASE_URL: https://www.runninghub.cn/openapi/v2
       MQTT_BROKER: mqtt://mosquitto:1883
       MINIO_ENDPOINT: http://minio:9000
       MINIO_BUCKET: creator-uploads
-      MINIO_ACCESS_KEY: avatar
-      MINIO_SECRET_KEY: ${MINIO_PASSWORD:-changeme123}
-      DATABASE_URL: postgresql://avatar:avatar123@postgres:5432/avatar_video
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
+      DATABASE_URL: ${DATABASE_URL:-postgresql://${POSTGRES_USER:-avatar}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-avatar_video}}
     depends_on:
-      - openclaw
       - redis
       - minio
       - postgres
@@ -91,9 +67,9 @@ services:
       dockerfile: creator-api/Dockerfile
     environment:
       REDIS_URL: redis://redis:6379
-      RH_API_KEY: ${RH_API_KEY:-}
+      RH_API_KEY: ${RH_API_KEY}
       RH_API_BASE_URL: https://www.runninghub.cn/openapi/v2
-      DATABASE_URL: postgresql://avatar:avatar123@postgres:5432/avatar_video
+      DATABASE_URL: ${DATABASE_URL:-postgresql://${POSTGRES_USER:-avatar}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-avatar_video}}
     command: node workers/generation-worker.js
     depends_on:
       - redis
@@ -102,5 +78,4 @@ services:
 volumes:
   redis_data:
   minio_data:
-  openclaw_data:
   postgres_data:
