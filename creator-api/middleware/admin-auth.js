@@ -36,10 +36,12 @@ export function initAdminAuth() {
   if (!ADMIN_PASSWORD) {
     const generated = randomBytes(8).toString('hex');
     process.env.ADMIN_PASSWORD = generated;
-    logger.info('[admin-auth] ADMIN_PASSWORD not set. A random password has been generated (check logs for first-run only).');
-    logger.info(`[admin-auth] Generated admin password: ${generated}`);
+    hashedPassword = hashPasswordSync(generated);
+    logger.info('[admin-auth] ADMIN_PASSWORD not set. A random password has been generated.');
+    logger.info('[admin-auth] Set ADMIN_PASSWORD in .env for persistent value.');
+    return;
   }
-  hashedPassword = hashPasswordSync(process.env.ADMIN_PASSWORD);
+  hashedPassword = hashPasswordSync(ADMIN_PASSWORD);
   logger.info('[admin-auth] Initialized. Admin password configured.');
 }
 

@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import prisma from '../prisma/client.js';
 import { adminLogin, adminAuth } from '../middleware/admin-auth.js';
+import { logger } from '../services/logger.js';
 
 export const adminRouter = Router();
 
@@ -16,7 +17,7 @@ adminRouter.post('/login', (req, res) => {
     }
     res.status(401).json({ success: false, error: result.error });
   } catch (e) {
-    console.error('[admin] login error:', e.message);
+    logger.error('[admin] login error:', e.message);
     res.status(500).json({ success: false, error: e.message });
   }
 });
@@ -61,7 +62,7 @@ adminRouter.get('/models', async (req, res) => {
       meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
     });
   } catch (e) {
-    console.error('[admin] list models error:', e.message);
+    logger.error('[admin] list models error:', e.message);
     res.status(500).json({ success: false, error: e.message });
   }
 });
@@ -77,7 +78,7 @@ adminRouter.get('/models/categories', async (_req, res) => {
       data: categories.map((c) => c.category).filter(Boolean).sort(),
     });
   } catch (e) {
-    console.error('[admin] categories error:', e.message);
+    logger.error('[admin] categories error:', e.message);
     res.status(500).json({ success: false, error: e.message });
   }
 });
@@ -92,7 +93,7 @@ adminRouter.get('/models/:id', async (req, res) => {
     }
     res.json({ success: true, data: model });
   } catch (e) {
-    console.error('[admin] get model error:', e.message);
+    logger.error('[admin] get model error:', e.message);
     res.status(500).json({ success: false, error: e.message });
   }
 });
@@ -128,7 +129,7 @@ adminRouter.post('/models', async (req, res) => {
 
     res.status(201).json({ success: true, data: model });
   } catch (e) {
-    console.error('[admin] create model error:', e.message);
+    logger.error('[admin] create model error:', e.message);
     res.status(500).json({ success: false, error: e.message });
   }
 });
@@ -158,7 +159,7 @@ adminRouter.patch('/models/:id', async (req, res) => {
     if (e.code === 'P2025') {
       return res.status(404).json({ success: false, error: '模型不存在' });
     }
-    console.error('[admin] update model error:', e.message);
+    logger.error('[admin] update model error:', e.message);
     res.status(500).json({ success: false, error: e.message });
   }
 });
@@ -176,7 +177,7 @@ adminRouter.delete('/models/:id', async (req, res) => {
     await prisma.modelRegistry.delete({ where: { id: req.params.id } });
     res.json({ success: true });
   } catch (e) {
-    console.error('[admin] delete model error:', e.message);
+    logger.error('[admin] delete model error:', e.message);
     res.status(500).json({ success: false, error: e.message });
   }
 });
@@ -201,7 +202,7 @@ adminRouter.post('/models/batch', async (req, res) => {
 
     res.json({ success: true, affected: ids.length, status });
   } catch (e) {
-    console.error('[admin] batch error:', e.message);
+    logger.error('[admin] batch error:', e.message);
     res.status(500).json({ success: false, error: e.message });
   }
 });
@@ -231,7 +232,7 @@ adminRouter.post('/models/import', async (_req, res) => {
       }
     });
   } catch (e) {
-    console.error('[admin] import error:', e.message);
+    logger.error('[admin] import error:', e.message);
     res.status(500).json({ success: false, error: e.message });
   }
 });
@@ -250,7 +251,7 @@ adminRouter.get('/stats', async (_req, res) => {
       data: { total, published, disabled, draft },
     });
   } catch (e) {
-    console.error('[admin] stats error:', e.message);
+    logger.error('[admin] stats error:', e.message);
     res.status(500).json({ success: false, error: e.message });
   }
 });
