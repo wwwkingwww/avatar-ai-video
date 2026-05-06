@@ -48,11 +48,10 @@ export class RHV2Client {
   async _fetch(method, path, opts = {}) {
     const { body, contentType, isMultipart } = opts
     const url = `${this.baseUrl}${path}`
-    const fetchOpts = { method, headers: this._headers(isMultipart ? undefined : (contentType || 'application/json')) }
+    const fetchOpts = { method, headers: this._headers(isMultipart ? (contentType || undefined) : (contentType || 'application/json')) }
 
     if (body) {
       if (isMultipart) {
-        delete fetchOpts.headers['Content-Type']
         fetchOpts.body = body
       } else {
         fetchOpts.body = JSON.stringify(body)
@@ -101,6 +100,7 @@ export class RHV2Client {
       this._fetch('POST', '/media/upload/binary', {
         body: fullBody,
         isMultipart: true,
+        contentType: `multipart/form-data; boundary=${boundary}`,
       })
     )
 

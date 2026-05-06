@@ -52,12 +52,43 @@ function normalizeField(p) {
 }
 
 export class ModelRouter {
-  constructor(registryPath = DEFAULT_REGISTRY_PATH, pricingPath = DEFAULT_PRICING_PATH) {
+  constructor(registryPath = DEFAULT_REGISTRY_PATH, pricingPath = DEFAULT_PRICING_PATH, dbLoader = null) {
     this.registryPath = registryPath;
     this.pricingPath = pricingPath;
+    this.dbLoader = dbLoader;
     this.models = [];
     this.pricing = {};
     this.loaded = false;
+  }
+
+  async loadFromDB() {
+    if (!this.dbLoader) return false;
+
+    try {
+      const dbModels = await this.dbLoader();
+      if (!dbModels || dbModels.length === 0) return false;
+
+      this.models = dbModels.map((m) => ({
+        endpoint: m.endpoint,
+        name: m.nameCn || m.nameEn || m.endpoint,
+        nameCn: m.nameCn || '',
+        nameEn: m.nameEn || '',
+        category: m.category || '',
+        taskType: m.taskType || '',
+        outputType: m.outputType || '',
+        inputTypes: m.inputTypes || [],
+        fields: Array.isArray(m.params)
+          ? m.params.map(normalizeField)
+          : [],
+        className: m.className || '',
+      }));
+
+      this.loaded = true;
+      return true;
+    } catch (err) {
+      console.error('[ModelRouter] DB load failed:', err.message);
+      return false;
+    }
   }
 
   loadRegistry() {
@@ -103,6 +134,14 @@ export class ModelRouter {
 
   ensureLoaded() {
     if (!this.loaded) this.loadRegistry();
+  }
+
+  async init() {
+    const dbLoaded = await this.loadFromDB();
+    if (!dbLoaded) {
+      this.loadRegistry();
+    }
+    return this;
   }
 
   listCapabilities() {

@@ -107,10 +107,10 @@ client.on('connect', () => {
   };
   client.publish(`phone/${BRIDGE_ID}/status`, JSON.stringify({
     ...basePayload, status: 'online', timestamp: Date.now(),
-  }));
+  }), { retain: true });
   client.publish(`phone/${BRIDGE_ID}/heartbeat`, JSON.stringify({
     ...basePayload, timestamp: Date.now(),
-  }));
+  }), { retain: true });
 
   setInterval(() => {
     ensureConnected();
@@ -118,7 +118,7 @@ client.on('connect', () => {
     client.publish(`phone/${BRIDGE_ID}/heartbeat`, JSON.stringify({
       phone_id: PHONE_ID, bridge_id: BRIDGE_ID, platforms: PLATFORMS,
       source: 'bridge', ...i, timestamp: Date.now(),
-    }));
+    }), { retain: true });
   }, 10000);
 });
 
